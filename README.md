@@ -1,84 +1,61 @@
-# Turborepo starter
+# 🧠 Journal AI
 
-This Turborepo starter is maintained by the Turborepo core team.
+_Your mind deserves a place to breathe._
 
-## Using this example
+Journal AI is a voice-first, emotionally intelligent journaling app powered by LLMs and graph-based memory. It's built for people who want to reflect deeper, remember better, and grow more intentionally.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
-```
+## 🌟 Vision
 
-## What's inside?
+We're building more than a journaling tool.
 
-This Turborepo includes the following packages/apps:
+Journal AI is a **personal thought partner** — a quiet space where you can:
+- Speak freely with your voice, no typing required
+- Be gently guided into meaningful reflection
+- Revisit emotional patterns and moments with clarity
+- See your journey visualized in a **Soul Map** — a graph of your thoughts, feelings, and recurring themes
 
-### Apps and Packages
+---
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## 🚀 Current Stack
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+| Layer      | Tech                             |
+|------------|----------------------------------|
+| Mobile App | React Native (voice + journaling)|
+| Web App    | Next.js (landing + optional web) |
+| AI Engine  | GPT-4.1 Mini (chat), GPT-4o (analysis) |
+| Vector DB  | Supabase + `pgvector` (entry similarity) |
+| Graph DB   | Neo4j (emotional relationship graph) |
+| Auth       | Supabase Auth                    |
+| Infra      | Turborepo + pnpm + monorepo      |
 
-### Utilities
+---
 
-This Turborepo has some additional tools already setup for you:
+## 🎯 Core Features (v1)
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- ✅ **Voice journaling** via device mic
+- ✅ **Conversational AI** that reflects and prompts gently
+- ✅ **Emotion tagging + topic extraction** after each entry
+- ✅ **User profile** that evolves over time, enriching prompts
+- ✅ **Similarity search** with vector embeddings (semantic memory)
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## 🧪 Coming Soon
 
-```
-cd my-turborepo
-pnpm build
-```
+- 🔍 **"Soul Map" graph UI** showing how your emotions, people, and experiences interconnect
+- ✨ **Reflective prompts** based on patterns across time
+- 📊 **Emotional summaries** and thematic journaling streaks
+- 🔐 **Encrypted local storage + export options**
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+## 🛠 Local Dev
 
-```
-cd my-turborepo
-pnpm dev
-```
+# Start web app
+pnpm dev --filter=web
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+# Start mobile app (React Native)
+cd apps/mobile
+npx expo start
