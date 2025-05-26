@@ -1,0 +1,17 @@
+{
+  "name": "@repo/ai",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./prompts": "./src/prompts.ts"
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "5.8.2"
+  }
+}
