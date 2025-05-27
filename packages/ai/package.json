@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "private": true,
   "exports": {
-    "./prompts": "./src/prompts.ts"
+    "./prompts": "./src/prompts.ts",
+    "./client": "./src/client.ts"
   },
   "scripts": {
     "dev": "tsc --watch",
@@ -13,5 +14,8 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "5.8.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
   }
 }
