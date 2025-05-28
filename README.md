@@ -53,9 +53,65 @@ Journal AI is a **personal thought partner** — a quiet space where you can:
 
 ## 🛠 Local Dev
 
+### Prerequisites
+
+1. **Start the database** (required for embeddings and data persistence):
+```bash
+docker-compose up -d
+```
+
+2. **Install dependencies**:
+```bash
+pnpm install
+```
+
+### Development Commands
+
+```bash
 # Start web app
 pnpm dev --filter=web
 
 # Start mobile app (React Native)
 cd apps/mobile
 npx expo start
+```
+
+---
+
+## 🐳 Database Setup
+
+We use Docker Compose to run PostgreSQL with `pgvector` support locally. This simulates our production environment and enables:
+
+- Local vector similarity search for journal entries
+- Supabase-compatible queries and schema
+- No manual PostgreSQL installation required
+
+### Database Services
+
+| Service | Details |
+|---------|---------|
+| **PostgreSQL + pgvector** | `localhost:5432` |
+| Username | `postgres` |
+| Password | `postgres` |
+| Database | `journal_dev` |
+
+### Database Commands
+
+```bash
+# Start database (runs in background)
+docker-compose up -d
+
+# Stop database
+docker-compose down
+
+# View database logs
+docker-compose logs -f
+
+# Verify connection
+lsof -i :5432
+
+# Connect via CLI
+psql -h localhost -U postgres -d journal_dev
+```
+
+**Note**: The database must be running before starting the web app, as embedding storage requires the vector database connection.
