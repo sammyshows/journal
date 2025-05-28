@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { sendToAnthropic } from "@repo/ai/client";
 import { getInitialJournalPrompt } from "@repo/ai/prompts";
 
 export default function Home() {
@@ -17,17 +18,22 @@ export default function Home() {
     setInput("");
     setLoading(true);
 
-    // Dummy fetch to OpenAI GPT-4.1 Mini (replace URL with your endpoint)
     try {
-      const res = await fetch("/api/journal-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...chat, userMessage] }),
-      });
-      const data = await res.json();
+      // Concatenate the chat into a single prompt for Anthropic
+      const prompt = chat
+        .concat(userMessage)
+        .map((msg) =>
+          msg.role === "user"
+            ? `User: ${msg.content}`
+            : `Assistant: ${msg.content}`
+        )
+        .join("\n") + "\nAssistant:";
+
+      const aiReply = await sendToAnthropic(process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY, prompt);
+
       setChat((prev) => [
         ...prev,
-        { role: "ai", content: data.reply || "Sorry, I couldn't respond." }
+        { role: "ai", content: aiReply || "Sorry, I couldn't respond." }
       ]);
     } catch (err) {
       setChat((prev) => [
