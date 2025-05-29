@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { dbClient } from "./database";
 
 export interface ChatMessage {
   role: "user" | "ai";
@@ -42,23 +43,22 @@ export async function sendToAnthropicAPI(apiKey: string, prompt: string): Promis
 }
 
 /**
- * Sends a chat conversation to Voyage AI embeddings API and returns the embeddings.
+ * Saves a chat conversation to the database with embeddings.
  * @param apiKey The Voyage AI API key
- * @param chat Array of chat messages to embed
- * @returns Promise that resolves when embeddings are processed
+ * @param chat Array of chat messages to embed and save
+ * @param userId Optional user ID (defaults to 'anonymous' for now)
+ * @returns Promise that resolves when the journal entry is saved
  */
-export async function sendToEmbeddingsAPI(apiKey: string, chat: ChatMessage[]): Promise<void> {
-  console.log('Sending chat to Voyage AI embeddings API...');
-  console.log('Chat messages:', chat);
+export async function sendToEmbeddingsAPI(apiKey: string, chat: ChatMessage[], userId: string = 'anonymous'): Promise<void> {
+  console.log('Processing chat for embeddings and database storage...');
   
   // Convert chat to a single text string for embedding
   const chatText = chat
     .map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
     .join("\n");
   
-  console.log('Combined chat text:', chatText);
-  
   try {
+    // Get embeddings from Voyage AI
     const response = await fetch('https://api.voyageai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -76,14 +76,28 @@ export async function sendToEmbeddingsAPI(apiKey: string, chat: ChatMessage[]): 
     }
 
     const data = await response.json();
-    console.log('Received embeddings from Voyage AI:', data);
+    const embedding = data.data[0]?.embedding;
     
-    // TODO: Insert into vector database
-    console.log('TODO: Insert embeddings into vector database (Supabase + pgvector)');
-    console.log('TODO: Extract emotions and topics for graph database (Neo4j)');
+    if (!embedding) {
+      throw new Error('No embedding returned from Voyage AI');
+    }
+
+    // Save to database
+    const entryId = await dbClient.saveJournalEntry({
+      user_id: userId,
+      content: chatText,
+      embedding: embedding,
+      metadata: {
+        message_count: chat.length,
+        created_via: 'web_app',
+        model_used: 'voyage-3-large'
+      }
+    });
+    
+    console.log(`Journal entry saved with ID: ${entryId}`);
     
   } catch (error) {
-    console.error('Error sending chat to Voyage AI embeddings:', error);
+    console.error('Error processing chat for embeddings:', error);
     throw error;
   }
 }
