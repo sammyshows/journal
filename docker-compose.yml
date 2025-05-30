@@ -4,11 +4,11 @@ version: '3.8'
 services:
   db:
     image: ankane/pgvector
-    container_name: local_pgvector
+    container_name: journal_db_dev
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: journal_dev
+      POSTGRES_DB: journal
     ports:
       - "5432:5432"
     volumes:
