@@ -1,103 +1,49 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { dbClient } from "./database";
-
 export interface ChatMessage {
   role: "user" | "ai";
   content: string;
 }
 
 /**
- * Sends a prompt to Anthropic Haiku 3 and returns the response.
- * @param prompt The user or system prompt to send.
- * @returns The AI's reply as a string.
+ * Sends a chat to the internal API and returns the AI response.
+ * @param chat Array of chat messages
+ * @returns The AI's reply as a string
  */
-export async function sendToAnthropicAPI(apiKey: string, prompt: string): Promise<string> {
-  const anthropic = new Anthropic({
-    apiKey,
-    dangerouslyAllowBrowser: true // For local development testing only
+export async function sendChatMessage(chat: ChatMessage[]): Promise<string> {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ chat }),
   });
 
-  const response = await anthropic.messages.create({
-    model: "claude-3-haiku-20240307",
-    max_tokens: 512,
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-  });
-
-  // The response.content is an array of content blocks
-  if (Array.isArray(response.content)) {
-    return response.content
-      .map(part => {
-        if (typeof part === "string") return part;
-        if (part.type === "text") return part.text;
-        return "";
-      })
-      .join("");
+  if (!response.ok) {
+    throw new Error('Failed to get AI response');
   }
-  // fallback for string content
-  return typeof response.content === "string" ? response.content : "";
+
+  const data = await response.json();
+  return data.reply || "Sorry, I couldn't respond.";
 }
 
 /**
- * Saves a chat conversation to the database with embeddings.
- * @param apiKey The Voyage AI API key
- * @param chat Array of chat messages to embed and save
- * @param userId Optional user ID (defaults to 'anonymous' for now)
+ * Finishes a chat conversation by saving it with embeddings.
+ * @param chat Array of chat messages to save
+ * @param userId Optional user ID (defaults to 'anonymous')
  * @returns Promise that resolves when the journal entry is saved
  */
-export async function sendToEmbeddingsAPI(apiKey: string, chat: ChatMessage[], userId: string = 'anonymous'): Promise<void> {
-  console.log('Processing chat for embeddings and database storage...');
-  
-  // Convert chat to a single text string for embedding
-  const chatText = chat
-    .map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
-    .join("\n");
-  
-  try {
-    // Get embeddings from Voyage AI
-    const response = await fetch('https://api.voyageai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        input: [chatText],
-        model: 'voyage-3-large'
-      })
-    });
+export async function finishChatConversation(chat: ChatMessage[], userId: string = 'anonymous'): Promise<void> {
+  const response = await fetch('/api/finish', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ chat, userId }),
+  });
 
-    if (!response.ok) {
-      throw new Error(`Voyage AI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const embedding = data.data[0]?.embedding;
-    
-    if (!embedding) {
-      throw new Error('No embedding returned from Voyage AI');
-    }
-
-    // Save to database
-    const entryId = await dbClient.saveJournalEntry({
-      user_id: userId,
-      content: chatText,
-      embedding: embedding,
-      metadata: {
-        message_count: chat.length,
-        created_via: 'web_app',
-        model_used: 'voyage-3-large'
-      }
-    });
-    
-    console.log(`Journal entry saved with ID: ${entryId}`);
-    
-  } catch (error) {
-    console.error('Error processing chat for embeddings:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error('Failed to finish chat');
   }
+
+  const data = await response.json();
+  console.log(data.message);
 }

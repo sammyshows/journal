@@ -5,6 +5,18 @@ export interface ChatMessage {
   content: string;
 }
 
+export function createAIClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+  }
+
+  return new Anthropic({
+    apiKey,
+  });
+}
+
 export async function sendToAnthropicAPI(prompt: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   

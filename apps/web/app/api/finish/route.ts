@@ -4,7 +4,7 @@ import { getDbClient } from '../lib/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { chat, userId = 'anonymous' }: { chat: ChatMessage[], userId?: string } = await request.json();
+    const { chat, userId }: { chat: ChatMessage[], userId?: string } = await request.json();
 
     if (!chat || !Array.isArray(chat)) {
       return NextResponse.json({ error: 'Invalid chat data' }, { status: 400 });
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     
     const dbClient = getDbClient();
     const entryId = await dbClient.saveJournalEntry({
-      user_id: userId,
+      user_id: userId || 'default-user',
       content: chatText,
       embedding: embedding,
       metadata: {
