@@ -7,8 +7,7 @@ DROP TABLE IF EXISTS user_profiles CASCADE;
 
 -- User profiles table
 CREATE TABLE user_profiles (
-  id SERIAL PRIMARY KEY,
-  user_id UUID UNIQUE NOT NULL, -- Will link to Supabase auth when implemented
+  user_id UUID PRIMARY KEY UNIQUE NOT NULL, -- Will link to Supabase auth when implemented
   name TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
@@ -18,7 +17,7 @@ CREATE TABLE user_profiles (
 
 -- Journal entries table
 CREATE TABLE journal_entries (
-  id SERIAL PRIMARY KEY,
+  journal_entry_id UUID PRIMARY KEY NOT NULL,
   user_id UUID NOT NULL, -- Foreign key to user_profiles.user_id
   content TEXT NOT NULL,
   embedding vector(1024), -- Voyage-3-large produces 1024-dimensional vectors

@@ -34,15 +34,45 @@ fi
 
 # Check if seed file exists and apply it
 if [ -f "$(dirname "$0")/../seed.sql" ]; then
-    echo -e "${YELLOW}🌱 Seeding test data...${NC}"
+    echo -e "${YELLOW}🌱 Seeding base data...${NC}"
     docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$(dirname "$0")/../seed.sql"
     
     if [ $? -ne 0 ]; then
-        echo -e "${RED}❌ Error seeding data${NC}"
+        echo -e "${RED}❌ Error seeding base data${NC}"
         exit 1
     fi
 else
-    echo -e "${YELLOW}⚠️  No seed.sql found, skipping test data${NC}"
+    echo -e "${YELLOW}⚠️  No seed.sql found, skipping base data${NC}"
+fi
+
+# Check if seed directory exists and apply seed files
+SEED_DIR="$(dirname "$0")/../seed"
+if [ -d "$SEED_DIR" ]; then
+    echo -e "${YELLOW}🌱 Seeding additional data...${NC}"
+    
+    # Seed users first
+    if [ -f "$SEED_DIR/users.sql" ]; then
+        echo -e "${YELLOW}   👤 Seeding users...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/users.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding users${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Seed journal entries
+    if [ -f "$SEED_DIR/journal-entries.sql" ]; then
+        echo -e "${YELLOW}   📖 Seeding journal entries...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/journal-entries.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding journal entries${NC}"
+            exit 1
+        fi
+    fi
+else
+    echo -e "${YELLOW}⚠️  No seed directory found, skipping additional data${NC}"
 fi
 
 echo -e "${GREEN}✅ Database reset complete!${NC}"
