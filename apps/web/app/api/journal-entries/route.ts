@@ -21,11 +21,8 @@ export async function GET(request: NextRequest) {
     try {
       let query = `
         SELECT 
-          id,
           content,
-          created_at,
-          updated_at,
-          metadata
+          created_at
         FROM journal_entries
       `
       const params: any[] = []

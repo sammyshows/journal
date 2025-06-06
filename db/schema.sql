@@ -3,22 +3,20 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS journal_entries CASCADE;
-DROP TABLE IF EXISTS user_profiles CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 -- User profiles table
-CREATE TABLE user_profiles (
+CREATE TABLE users (
   user_id UUID PRIMARY KEY UNIQUE NOT NULL, -- Will link to Supabase auth when implemented
   name TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  reflection_preferences JSONB DEFAULT '{}', -- Store user's journaling preferences
-  emotional_patterns JSONB DEFAULT '{}'      -- Track recurring emotional themes
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Journal entries table
 CREATE TABLE journal_entries (
   journal_entry_id UUID PRIMARY KEY NOT NULL,
-  user_id UUID NOT NULL, -- Foreign key to user_profiles.user_id
+  user_id UUID NOT NULL, -- Foreign key to users.user_id
   content TEXT NOT NULL,
   embedding vector(1024), -- Voyage-3-large produces 1024-dimensional vectors
   created_at TIMESTAMP DEFAULT NOW(),
@@ -26,7 +24,7 @@ CREATE TABLE journal_entries (
   metadata JSONB DEFAULT '{}', -- Store additional context (voice transcription confidence, etc.)
   
   -- Add index for user queries and vector similarity search
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
 -- Indexes for performance
@@ -47,7 +45,7 @@ END;
 $$ language 'plpgsql';
 
 -- Apply updated_at triggers
-CREATE TRIGGER update_user_profiles_updated_at BEFORE UPDATE ON user_profiles 
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users 
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_journal_entries_updated_at BEFORE UPDATE ON journal_entries 
