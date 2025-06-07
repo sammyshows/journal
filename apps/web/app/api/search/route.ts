@@ -46,21 +46,22 @@ export async function POST(request: NextRequest) {
       const queryEmbedding = embeddingData.data[0].embedding
 
       // Search for similar journal entries using vector similarity
+      const userId = '123e4567-e89b-12d3-a456-426614174000'; // TODO: Get from auth
       const searchQuery = `
         SELECT 
-          id,
+          journal_entry_id,
           content,
           created_at,
           metadata,
           1 - (embedding <=> $1::vector) as similarity_score
         FROM journal_entries 
-        WHERE embedding IS NOT NULL
+        WHERE embedding IS NOT NULL AND user_id = $2
         ORDER BY embedding <=> $1::vector
-        LIMIT 5
+        LIMIT 3
       `
 
-      const searchResult = await client.query(searchQuery, [JSON.stringify(queryEmbedding)])
-      const relatedEntries = searchResult.rows.filter((row: any) => row.similarity_score > 0.3)
+      const searchResult = await client.query(searchQuery, [JSON.stringify(queryEmbedding), userId])
+      const relatedEntries = searchResult.rows.filter((row: any) => row.similarity_score > 0.4)
 
       // Generate AI response based on the query and related entries
       const context = relatedEntries.length > 0 
@@ -69,19 +70,21 @@ export async function POST(request: NextRequest) {
           ).join('\n\n')}`
         : 'No closely related entries found in the user\'s journal history.'
 
-      const aiPrompt = `
-        The user is asking: "${query}"
-        
-        ${context}
-        
-        Provide a thoughtful, empathetic response that:
-        1. Addresses their current question/situation
-        2. Draws connections to their past experiences if relevant entries were found
-        3. Offers insights or perspectives that might be helpful
-        4. Maintains a supportive, reflective tone
-        
-        Keep the response conversational and personal, as if you're a trusted friend who knows their history.
-      `
+      const aiPrompt = `You are a thoughtful AI assistant helping someone reflect on their past journal entries. The user is asking about their personal experiences, and you have access to some of their previous journal entries that may be relevant.
+
+User's question: "${query}"
+
+${context}
+
+Instructions:
+- Provide a concise, direct response (1-2 paragraphs maximum) that specifically answers their question
+- Reference specific details from their journal entries when relevant
+- Be empathetic but focused - don't expand beyond what they asked
+- If the journal entries don't contain relevant information, briefly acknowledge this
+- Keep your response conversational and supportive
+- Answer only what they asked - don't suggest additional topics or directions
+
+Response:`
 
       const aiResponse = await ai.messages.create({
         model: 'claude-3-5-sonnet-20241022',
