@@ -12,7 +12,12 @@ type InputMode = 'keyboard' | 'microphone';
 
 export default function JournalView(): React.ReactElement {
   const [mode, setMode] = useState<JournalMode>('standard');
-  const [inputMode, setInputMode] = useState<InputMode | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('journal-input-mode') as InputMode) || 'keyboard';
+    }
+    return 'keyboard';
+  });
   const [input, setInput] = useState("");
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,14 +32,16 @@ export default function JournalView(): React.ReactElement {
     }
   };
 
+  const handleInputModeChange = (newInputMode: InputMode) => {
+    setInputMode(newInputMode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('journal-input-mode', newInputMode);
+    }
+  };
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim()) return;
-
-    if (mode === 'standard') {
-      await handleFinish();
-      return;
-    }
+    if (!input.trim() || mode === 'standard') return;
 
     const userMessage: ChatMessage = { role: "user", content: input };
     setChat((prev) => [...prev, userMessage]);
@@ -96,7 +103,6 @@ export default function JournalView(): React.ReactElement {
       
       setInput("");
       setChat([]);
-      setInputMode(null);
       if (mode === 'guided') {
         setChat([{ role: "ai", content: "What's been on your mind lately? I'm here to help you explore your thoughts." }]);
       }
@@ -149,7 +155,7 @@ export default function JournalView(): React.ReactElement {
             <h2 className="text-2xl font-semibold text-slate-800">
               {mode === 'guided' ? 'Guided Reflection' : 'Personal Journal'}
             </h2>
-            {((mode === 'guided' && chat.length > 1) || (mode === 'standard' && input.trim())) && (
+            {((mode === 'guided' && chat.some(msg => msg.role === 'user')) || (mode === 'standard' && input.trim())) && (
               <button
                 onClick={handleFinish}
                 disabled={finishing || loading}
@@ -164,116 +170,123 @@ export default function JournalView(): React.ReactElement {
             )}
           </div>
 
-          {/* Input Selection or Chat Area */}
-          {inputMode === null ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="flex gap-8">
-                <button
-                  onClick={() => setInputMode('keyboard')}
-                  className="group flex flex-col items-center gap-4 p-8 rounded-2xl bg-slate-50/50 hover:bg-slate-100/70 transition-all duration-200 hover:scale-105"
-                >
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
-                    </svg>
-                  </div>
-                  <span className="text-slate-700 font-medium">Type</span>
-                </button>
-                
-                <button
-                  onClick={() => {}} 
-                  className="group flex flex-col items-center gap-4 p-8 rounded-2xl bg-slate-50/50 hover:bg-slate-100/70 transition-all duration-200 hover:scale-105"
-                >
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                    </svg>
-                  </div>
-                  <span className="text-slate-700 font-medium">Speak</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Chat Area (only for guided mode) */}
-              {mode === 'guided' && (
-                <div className="relative h-96 overflow-y-auto p-6">
-                  {finishing && (
-                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10">
-                      <div className="text-slate-600 font-medium flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                        Saving your reflection...
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="space-y-6">
-                    {chat.map((msg, i) => (
-                      <div
-                        key={i}
-                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[85%] px-6 py-4 rounded-2xl ${
-                            msg.role === "user"
-                              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
-                              : "bg-slate-50 text-slate-800 border border-slate-200 shadow-sm"
-                          }`}
-                        >
-                          {msg.content}
-                        </div>
-                      </div>
-                    ))}
-                    {loading && (
-                      <div className="flex justify-start">
-                        <div className="bg-slate-50 text-slate-600 px-6 py-4 rounded-2xl border border-slate-200 flex items-center gap-3">
-                          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                          AI is reflecting...
-                        </div>
-                      </div>
-                    )}
+          {/* Chat Area (only for guided mode) */}
+          {mode === 'guided' && (
+            <div className="relative h-96 overflow-y-auto p-6">
+              {finishing && (
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="text-slate-600 font-medium flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                    Saving your reflection...
                   </div>
                 </div>
               )}
-
-              {/* Input Area */}
-              <div className="p-6 border-t border-slate-100">
-                <form onSubmit={handleSend} className="flex gap-4">
-                  <div className="flex-1 relative">
-                    <textarea
-                      value={input}
-                      onChange={e => setInput(e.target.value)}
-                      placeholder={mode === 'guided' ? "Share your thoughts..." : "Write your journal entry..."}
-                      className="w-full px-6 py-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all duration-200 bg-white/70 backdrop-blur-sm min-h-[120px]"
-                      disabled={loading || finishing}
-                      rows={mode === 'standard' ? 6 : 3}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <button
-                      type="submit"
-                      disabled={loading || finishing || !input.trim()}
-                      className={`px-8 py-4 rounded-2xl font-medium transition-all duration-200 ${
-                        loading || finishing || !input.trim()
-                          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                          : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-blue-200"
+              
+              <div className="space-y-6">
+                {chat.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] px-6 py-4 rounded-2xl ${
+                        msg.role === "user"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                          : "bg-slate-50 text-slate-800 border border-slate-200 shadow-sm"
                       }`}
                     >
-                      {mode === 'guided' ? 'Send' : 'Save'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInputMode(null)}
-                      className="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm transition-colors"
-                    >
-                      Back
-                    </button>
+                      {msg.content}
+                    </div>
                   </div>
-                </form>
+                ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-50 text-slate-600 px-6 py-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                      AI is reflecting...
+                    </div>
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
+
+          {/* Input Area */}
+          <div className="p-6 border-t border-slate-100">
+            <form onSubmit={handleSend} className="flex gap-4">
+              <div className="flex-1 relative">
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder={mode === 'guided' ? "Share your thoughts..." : "Write your journal entry..."}
+                  className="w-full px-6 py-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all duration-200 bg-white/70 backdrop-blur-sm min-h-[120px]"
+                  disabled={loading || finishing}
+                  rows={mode === 'standard' ? 6 : 3}
+                />
+                
+                {/* Input Mode Toggle - Only show when no content has been entered */}
+                {!input.trim() && !loading && !finishing && (
+                  <div className="absolute bottom-4 left-4">
+                    <div className="relative bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-lg border border-white/30">
+                      <div 
+                        className={`absolute top-1 h-[calc(100%-8px)] rounded-full shadow-md transition-all duration-300 ease-in-out ${
+                          inputMode === 'keyboard' 
+                            ? 'left-1 w-[calc(50%-4px)] bg-gradient-to-r from-blue-500 to-blue-600' 
+                            : 'left-[calc(50%+4px-1px)] w-[calc(50%-4px)] bg-gradient-to-r from-red-500 to-red-600'
+                        }`}
+                      />
+                      <div className="relative flex">
+                        <button
+                          type="button"
+                          onClick={() => handleInputModeChange('keyboard')}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-full font-medium text-sm transition-colors duration-300 relative z-10 ${
+                            inputMode === 'keyboard' 
+                              ? 'text-white' 
+                              : 'text-slate-600 hover:text-slate-800'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+                          </svg>
+                          Type
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInputModeChange('microphone')}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-full font-medium text-sm transition-colors duration-300 relative z-10 ${
+                            inputMode === 'microphone' 
+                              ? 'text-white' 
+                              : 'text-slate-600 hover:text-slate-800'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                          </svg>
+                          Speak
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {mode === 'guided' && (
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading || finishing || !input.trim()}
+                    className={`px-8 py-4 rounded-2xl font-medium transition-all duration-200 ${
+                      loading || finishing || !input.trim()
+                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-blue-200"
+                    }`}
+                  >
+                    Send
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
         </div>
       </div>
     </div>

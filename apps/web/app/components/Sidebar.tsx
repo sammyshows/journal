@@ -3,8 +3,8 @@
 import React, { useState } from 'react'
 
 interface SidebarProps {
-  currentPage: 'journal' | 'database' | 'ai-search'
-  onPageChange: (page: 'journal' | 'database' | 'ai-search') => void
+  currentPage: 'journal' | 'database' | 'ai-search' | 'soul-map'
+  onPageChange: (page: 'journal' | 'database' | 'ai-search' | 'soul-map') => void
 }
 
 export default function Sidebar({ currentPage, onPageChange }: SidebarProps): React.ReactElement {
@@ -28,6 +28,12 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps): Re
       label: 'AI Search',
       icon: '🔍',
       description: 'Connect thoughts'
+    },
+    {
+      id: 'soul-map' as const,
+      label: 'Soul Map',
+      icon: '🌐',
+      description: 'Explore connections'
     }
   ]
 
