@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
 export interface JournalEntry {
-  id?: number;
+  journal_entry_id?: string;
   user_id: string;
   content: string;
   embedding?: number[];
@@ -20,13 +20,13 @@ export class DatabaseClient {
     });
   }
 
-  async saveJournalEntry(entry: JournalEntry): Promise<number> {
+  async saveJournalEntry(entry: JournalEntry): Promise<string> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
         `INSERT INTO journal_entries (user_id, content, embedding, metadata) 
          VALUES ($1, $2, $3, $4) 
-         RETURNING id`,
+         RETURNING journal_entry_id`,
         [
           entry.user_id,
           entry.content,
@@ -34,7 +34,7 @@ export class DatabaseClient {
           JSON.stringify(entry.metadata || {})
         ]
       );
-      return result.rows[0].id;
+      return result.rows[0].journal_entry_id;
     } finally {
       client.release();
     }

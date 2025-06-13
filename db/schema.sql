@@ -4,15 +4,18 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables if they exist
-DROP TABLE IF EXISTS journal_entries CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- DROP TABLE IF EXISTS node_entry_map CASCADE;
+-- DROP TABLE IF EXISTS edges CASCADE;
+-- DROP TABLE IF EXISTS nodes CASCADE;
+-- DROP TABLE IF EXISTS journal_entries CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
 
 -- User profiles table
 CREATE TABLE users (
   user_id UUID PRIMARY KEY UNIQUE NOT NULL DEFAULT uuid_generate_v4(), -- Will link to Supabase auth when implemented
   name TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Journal entries table
@@ -21,13 +24,54 @@ CREATE TABLE journal_entries (
   user_id UUID NOT NULL, -- Foreign key to users.user_id
   content TEXT NOT NULL,
   embedding vector(1024), -- Voyage-3-large produces 1024-dimensional vectors
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
   metadata JSONB DEFAULT '{}', -- Store additional context (voice transcription confidence, etc.)
+  
+  -- Graph processing fields
+  graph_processed BOOLEAN DEFAULT FALSE,
+  entities_extracted JSONB,
+  relationships_extracted JSONB,
   
   -- Add index for user queries and vector similarity search
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+-- Nodes: Core concepts/emotions/themes extracted from entries
+CREATE TABLE nodes (
+  node_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  label TEXT NOT NULL,           -- e.g. "self-doubt", "career"
+  type TEXT NOT NULL,            -- e.g. "emotion", "theme", "person"
+  user_id UUID REFERENCES users(user_id), -- Node is specific to user
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(label, type, user_id)   -- Prevent duplicate concepts per user
+);
+
+-- Edges: Relationships between nodes with temporal tracking
+CREATE TABLE edges (
+  edge_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  from_node_id UUID REFERENCES nodes(node_id),
+  to_node_id UUID REFERENCES nodes(node_id),
+  weight FLOAT DEFAULT 1.0,      -- Relationship strength (-1 to 1)
+  timestamps TIMESTAMPTZ[] DEFAULT '{}',  -- When this relationship occurred
+  source_entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  user_id UUID REFERENCES users(user_id), -- Edge is specific to user
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Node-Entry mapping: Track which concepts appear in which entries  
+CREATE TABLE node_entry_map (
+  node_entry_map_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  node_id UUID REFERENCES nodes(node_id),
+  entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  user_id UUID REFERENCES users(user_id), -- Mapping is specific to user
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(node_id, entry_id)
+);
+
 
 -- Indexes for performance
 CREATE INDEX idx_journal_entries_user_id ON journal_entries(user_id);
@@ -52,3 +96,18 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_journal_entries_updated_at BEFORE UPDATE ON journal_entries 
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- Graph table indexes
+CREATE INDEX idx_nodes_user_id ON nodes(user_id);
+CREATE INDEX idx_nodes_type ON nodes(type);
+CREATE INDEX idx_nodes_label_type_user ON nodes(label, type, user_id);
+CREATE INDEX idx_edges_from_node ON edges(from_node_id);
+CREATE INDEX idx_edges_to_node ON edges(to_node_id);
+CREATE INDEX idx_edges_user_id ON edges(user_id);
+CREATE INDEX idx_edges_source_entry ON edges(source_entry_id);
+CREATE INDEX idx_node_entry_map_node ON node_entry_map(node_id);
+CREATE INDEX idx_node_entry_map_entry ON node_entry_map(entry_id);
+CREATE INDEX idx_node_entry_map_user ON node_entry_map(user_id);
+
+CREATE INDEX idx_journal_entries_graph_processed ON journal_entries(graph_processed);

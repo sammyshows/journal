@@ -49,12 +49,45 @@ if [ -d "$SEED_DIR" ]; then
     fi
     
     # Seed journal entries
-    if [ -f "$SEED_DIR/journal-entries.sql" ]; then
+    if [ -f "$SEED_DIR/journal-entries.js" ]; then
         echo -e "${YELLOW}   📖 Seeding journal entries...${NC}"
-        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/journal-entries.sql"
+        node $SEED_DIR/journal-entries.js | docker exec -i $CONTAINER_NAME psql -U postgres -d journal
         
         if [ $? -ne 0 ]; then
             echo -e "${RED}❌ Error seeding journal entries${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Seed nodes
+    if [ -f "$SEED_DIR/nodes.sql" ]; then
+        echo -e "${YELLOW}   🧠 Seeding nodes...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/nodes.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding nodes${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Seed edges
+    if [ -f "$SEED_DIR/edges.sql" ]; then
+        echo -e "${YELLOW}   🔗 Seeding edges...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/edges.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding edges${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Seed node-entry mappings
+    if [ -f "$SEED_DIR/node-entry-map.sql" ]; then
+        echo -e "${YELLOW}   📊 Seeding node-entry mappings...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/node-entry-map.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding node-entry mappings${NC}"
             exit 1
         fi
     fi
