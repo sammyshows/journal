@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import DataModal from './DataModal'
 
 interface JournalEntry {
   id: number
@@ -21,6 +22,25 @@ interface UserProfile {
   emotional_patterns: Record<string, any>
 }
 
+interface Node {
+  id: string
+  label: string
+  type: string
+  user_id: string
+  created_at: string
+}
+
+interface Edge {
+  id: string
+  from_node_id: string
+  to_node_id: string
+  weight: number
+  timestamps: string[]
+  source_entry_id: string
+  user_id: string
+  created_at: string
+}
+
 interface PaginationInfo {
   total: number
   limit: number
@@ -28,14 +48,16 @@ interface PaginationInfo {
   hasMore: boolean
 }
 
-type DataType = 'journal-entries' | 'users'
+type DataType = 'journal-entries' | 'users' | 'nodes' | 'edges'
 
 export default function DatabaseView(): React.ReactElement {
   const [selectedDataType, setSelectedDataType] = useState<DataType>('journal-entries')
-  const [data, setData] = useState<(JournalEntry | UserProfile)[]>([])
+  const [data, setData] = useState<(JournalEntry | UserProfile | Node | Edge)[]>([])
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const dataTypes = [
     {
@@ -49,6 +71,18 @@ export default function DatabaseView(): React.ReactElement {
       label: 'Users',
       icon: '👤',
       description: 'View user profiles'
+    },
+    {
+      id: 'nodes' as const,
+      label: 'Graph Nodes',
+      icon: '🧠',
+      description: 'View extracted concepts and entities'
+    },
+    {
+      id: 'edges' as const,
+      label: 'Graph Edges',
+      icon: '🔗',
+      description: 'View relationships between nodes'
     }
   ]
 
@@ -87,6 +121,33 @@ export default function DatabaseView(): React.ReactElement {
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleString()
+  }
+
+  const handleRowClick = (item: any) => {
+    setSelectedItem(item)
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setSelectedItem(null)
+  }
+
+  const getModalTitle = () => {
+    if (!selectedItem) return ''
+    
+    switch (selectedDataType) {
+      case 'journal-entries':
+        return `Journal Entry ${selectedItem.journal_entry_id}`
+      case 'users':
+        return selectedItem.name || `User ${selectedItem.user_id}`
+      case 'nodes':
+        return `${selectedItem.label} (${selectedItem.type})`
+      case 'edges':
+        return `${selectedItem.from_label} → ${selectedItem.to_label}`
+      default:
+        return 'Item Details'
+    }
   }
 
   const getColumns = () => {
@@ -135,6 +196,11 @@ export default function DatabaseView(): React.ReactElement {
                   {pagination.total} total entries
                 </span>
               )}
+              {data.length > 0 && (
+                <span className="text-xs text-gray-500 italic">
+                  Click any row to view details
+                </span>
+              )}
               <button
                 onClick={() => fetchData(selectedDataType)}
                 disabled={loading}
@@ -174,7 +240,11 @@ export default function DatabaseView(): React.ReactElement {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {data.map((row, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr 
+                      key={index} 
+                      className="hover:bg-blue-50 cursor-pointer transition-colors"
+                      onClick={() => handleRowClick(row)}
+                    >
                       {getColumns().map((column) => {
                         const value = (row as any)[column]
                         return (
@@ -189,6 +259,14 @@ export default function DatabaseView(): React.ReactElement {
                                   {formatValue(value)}
                                 </div>
                               </div>
+                            ) : column === 'weight' ? (
+                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {value}
+                              </span>
+                            ) : column === 'type' ? (
+                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
+                                {value}
+                              </span>
                             ) : (
                               <div className="break-words">
                                 {formatValue(value)}
@@ -230,6 +308,17 @@ export default function DatabaseView(): React.ReactElement {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      {selectedItem && (
+        <DataModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          title={getModalTitle()}
+          data={selectedItem}
+          type={selectedDataType}
+        />
+      )}
     </div>
   )
 }
