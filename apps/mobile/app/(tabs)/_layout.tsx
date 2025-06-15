@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import TabBarAddButton from '@/components/TabBarAddButton';
 
 export default function TabLayout() {
   return (
@@ -38,6 +39,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="new-entry"
+        options={{
+          title: '',
+          tabBarLabel: () => null,
+          tabBarIcon: ({ focused }) => <TabBarAddButton focused={focused} />,
         }}
       />
       <Tabs.Screen

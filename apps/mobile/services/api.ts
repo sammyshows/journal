@@ -1,3 +1,5 @@
+import { API_URL } from '@env';
+
 export interface JournalEntry {
   journal_entry_id?: string;
   content: string;
@@ -36,15 +38,14 @@ export interface UserStats {
 }
 
 // Configuration
-const API_BASE_URL = __DEV__ ? 'http://localhost:3001' : 'https://your-production-api.com';
 const DEFAULT_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 // API Client
 class ApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+  constructor() {
+    this.baseUrl = API_URL;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -89,7 +90,7 @@ class ApiClient {
   }
 }
 
-const apiClient = new ApiClient(API_BASE_URL);
+const apiClient = new ApiClient();
 
 export const apiService = {
   // Journal endpoints
