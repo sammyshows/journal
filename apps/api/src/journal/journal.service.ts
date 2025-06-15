@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
-import { GraphService } from '../graph/graph.service';
+import { EntityExtractionService } from '../common/entity-extraction.service';
+import { GraphProcessorService } from '../common/graph-processor.service';
 import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto } from './journal.dto';
 import { ChatMessage } from '../chat/chat.dto';
 
@@ -10,7 +11,8 @@ export class JournalService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly aiService: AiService,
-    private readonly graphService: GraphService,
+    private readonly entityExtractionService: EntityExtractionService,
+    private readonly graphProcessorService: GraphProcessorService,
   ) {}
 
   async getJournalEntries(
@@ -102,10 +104,10 @@ export class JournalService {
     // Process graph data synchronously (with error handling)
     try {
       console.log('Processing graph data synchronously...');
-      const extraction = await this.graphService.extractNodesAndEdges(chatText);
+      const extraction = await this.entityExtractionService.extractNodesAndEdges(chatText);
       console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
       
-      await this.graphService.processJournalEntryForGraph(userId || 'default-user', entryId, extraction);
+      await this.graphProcessorService.processJournalEntryForGraph(userId || 'default-user', entryId, extraction);
       console.log('Graph processing completed successfully');
     } catch (error) {
       console.warn('Graph processing failed (continuing without graph data):', error);

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { AiService } from '../ai/ai.service';
+import { EntityExtractionService } from '../common/entity-extraction.service';
+import { GraphProcessorService } from '../common/graph-processor.service';
 import { 
   GraphNode, 
   GraphEdge, 
@@ -15,35 +16,12 @@ import {
 export class GraphService {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly aiService: AiService,
+    private readonly entityExtractionService: EntityExtractionService,
+    private readonly graphProcessorService: GraphProcessorService,
   ) {}
 
   async extractNodesAndEdges(journalText: string): Promise<GraphExtractionResult> {
-    const prompt = `You are a graph-mapping assistant. Extract important nodes and edges from this journal entry that describe emotional, psychological, or narrative structure.
-
-Return this exact JSON format:
-{
-  "nodes": [
-    { "label": "self-doubt", "type": "emotion" },
-    { "label": "career", "type": "theme" },
-    { "label": "mentor", "type": "person" }
-  ],
-  "edges": [
-    { "from": "self-doubt", "to": "career", "weight": 0.8 },
-    { "from": "mentor", "to": "self-doubt", "weight": -0.4 }
-  ]
-}
-
-JOURNAL ENTRY:
-${journalText}`;
-
-    try {
-      const response = await this.aiService.sendMessage(prompt);
-      return JSON.parse(response);
-    } catch (error) {
-      console.error('Graph extraction failed:', error);
-      return { nodes: [], edges: [] };
-    }
+    return this.entityExtractionService.extractNodesAndEdges(journalText);
   }
 
   async processJournalEntryForGraph(
@@ -51,105 +29,7 @@ ${journalText}`;
     entryId: string, 
     extraction: GraphExtractionResult
   ): Promise<void> {
-    const client = await this.databaseService.getClient();
-    
-    try {
-      await client.query('BEGIN');
-
-      // Process nodes
-      const nodeIds: Record<string, string> = {};
-      for (const node of extraction.nodes) {
-        const nodeId = await this.upsertNode(client, userId, node);
-        nodeIds[node.label] = nodeId;
-        
-        // Map node to entry
-        await this.mapNodeToEntry(client, nodeId, entryId, userId);
-      }
-
-      // Process edges
-      for (const edge of extraction.edges) {
-        const fromNodeId = nodeIds[edge.from];
-        const toNodeId = nodeIds[edge.to];
-        
-        if (fromNodeId && toNodeId) {
-          await this.upsertEdge(client, fromNodeId, toNodeId, edge.weight, entryId, userId);
-        }
-      }
-
-      // Update journal entry as processed
-      await client.query(
-        'UPDATE journal_entries SET graph_processed = true, entities_extracted = $1, relationships_extracted = $2 WHERE journal_entry_id = $3',
-        [JSON.stringify(extraction.nodes), JSON.stringify(extraction.edges), entryId]
-      );
-
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Graph processing failed:', error);
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  private async upsertNode(client: any, userId: string, node: GraphNode): Promise<string> {
-    // Check if node exists
-    const existingNode = await client.query(
-      'SELECT node_id FROM nodes WHERE label = $1 AND type = $2 AND user_id = $3',
-      [node.label, node.type, userId]
-    );
-
-    if (existingNode.rows.length > 0) {
-      return existingNode.rows[0].node_id;
-    }
-
-    // Create new node
-    const result = await client.query(
-      'INSERT INTO nodes (label, type, user_id) VALUES ($1, $2, $3) RETURNING node_id',
-      [node.label, node.type, userId]
-    );
-
-    return result.rows[0].node_id;
-  }
-
-  private async upsertEdge(
-    client: any, 
-    fromNodeId: string, 
-    toNodeId: string, 
-    weight: number, 
-    entryId: string, 
-    userId: string
-  ): Promise<void> {
-    // Check if edge exists
-    const existingEdge = await client.query(
-      'SELECT edge_id, timestamps FROM edges WHERE from_node_id = $1 AND to_node_id = $2 AND user_id = $3',
-      [fromNodeId, toNodeId, userId]
-    );
-
-    if (existingEdge.rows.length > 0) {
-      // Update existing edge
-      const currentTimestamps = existingEdge.rows[0].timestamps || [];
-      const newTimestamps = [...currentTimestamps, new Date()];
-      
-      await client.query(
-        'UPDATE edges SET weight = $1, timestamps = $2, source_entry_id = $3 WHERE edge_id = $4',
-        [weight, newTimestamps, entryId, existingEdge.rows[0].edge_id]
-      );
-    } else {
-      // Create new edge
-      await client.query(
-        'INSERT INTO edges (from_node_id, to_node_id, weight, timestamps, source_entry_id, user_id) VALUES ($1, $2, $3, $4, $5, $6)',
-        [fromNodeId, toNodeId, weight, [new Date()], entryId, userId]
-      );
-    }
-  }
-
-  private async mapNodeToEntry(client: any, nodeId: string, entryId: string, userId: string): Promise<void> {
-    // Insert node-entry mapping if it doesn't exist
-    await client.query(
-      'INSERT INTO node_entry_map (node_id, entry_id, user_id) VALUES ($1, $2, $3) ON CONFLICT (node_id, entry_id) DO NOTHING',
-      [nodeId, entryId, userId]
-    );
+    return this.graphProcessorService.processJournalEntryForGraph(userId, entryId, extraction);
   }
 
   async getNodes(limit: number, offset: number): Promise<NodesResponseDto> {

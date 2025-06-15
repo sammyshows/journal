@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-
-export interface ChatMessage {
-  role: "user" | "ai";
-  content: string;
-}
+import { ChatMessage } from '../common/interfaces';
 
 @Injectable()
 export class AiService {
@@ -23,7 +19,7 @@ export class AiService {
     });
   }
 
-  async sendMessage(prompt: string): Promise<string> {
+  async sendToAnthropicAPI(prompt: string): Promise<string> {
     const response = await this.anthropic.messages.create({
       model: "claude-3-haiku-20240307",
       max_tokens: 512,
@@ -46,6 +42,10 @@ export class AiService {
     }
     
     return typeof response.content === "string" ? response.content : "";
+  }
+
+  async sendMessage(prompt: string): Promise<string> {
+    return this.sendToAnthropicAPI(prompt);
   }
 
   createClient(): Anthropic {

@@ -1,16 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
-
-export interface JournalEntry {
-  journal_entry_id?: string;
-  user_id: string;
-  content: string;
-  embedding?: number[];
-  created_at?: Date;
-  updated_at?: Date;
-  metadata?: Record<string, any>;
-}
+import { JournalEntry } from '../common/interfaces';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {

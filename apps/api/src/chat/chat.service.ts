@@ -1,13 +1,12 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { AiService } from '../ai/ai.service';
-import { PromptsService } from '../ai/prompts.service';
+import { getJournalAIRolePrompt } from '../common/prompts';
 import { ChatMessage } from './chat.dto';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly aiService: AiService,
-    private readonly promptsService: PromptsService,
   ) {}
 
   async processChat(chat: ChatMessage[]): Promise<string> {
@@ -15,7 +14,7 @@ export class ChatService {
       throw new BadRequestException('Invalid chat data');
     }
 
-    const rolePrompt = this.promptsService.getJournalAIRolePrompt();
+    const rolePrompt = getJournalAIRolePrompt();
     const chatMessages = chat
       .map((msg) =>
         msg.role === "user"
