@@ -4,100 +4,97 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { apiService, JournalEntry } from '../../services/api';
+import { JournalEntry } from '../../services/api';
+import { useJournalStore } from '../../stores/useJournalStore';
 
 interface GroupedEntry {
-  date: string;
+  dateNumber: string;
+  dateMonth: string;
   dayName: string;
   relativeTime: string;
   entries: (JournalEntry & { emoji: string; tags: string[] })[];
 }
 
-const DUMMY_DATA: GroupedEntry[] = [
-  {
-    date: '23\nJUN',
-    dayName: 'Friday',
-    relativeTime: '2 days ago',
-    entries: [
-      {
-        journal_entry_id: '1',
-        content: 'Morning Workout Session',
-        created_at: '2025-06-13T09:15:00Z',
-        emoji: '💪',
-        tags: ['#discipline', '#grind', '#exercise']
-      },
-      {
-        journal_entry_id: '2',
-        content: 'Team Meeting Reflections',
-        created_at: '2025-06-13T14:30:00Z',
-        emoji: '🤝',
-        tags: ['#work', '#collaboration', '#growth']
-      }
-    ]
-  },
-  {
-    date: '21\nJUN',
-    dayName: 'Wednesday',
-    relativeTime: '4 days ago',
-    entries: [
-      {
-        journal_entry_id: '3',
-        content: 'Creative Writing Session',
-        created_at: '2025-06-11T19:45:00Z',
-        emoji: '✍️',
-        tags: ['#creativity', '#writing', '#mindfulness']
-      }
-    ]
-  },
-  {
-    date: '18\nJUN',
-    dayName: 'Sunday',
-    relativeTime: '1 week ago',
-    entries: [
-      {
-        journal_entry_id: '4',
-        content: 'Weekend Nature Walk',
-        created_at: '2025-06-08T16:20:00Z',
-        emoji: '🌿',
-        tags: ['#nature', '#peace', '#reflection']
-      },
-      {
-        journal_entry_id: '5',
-        content: 'Family Dinner Thoughts',
-        created_at: '2025-06-08T20:00:00Z',
-        emoji: '👨‍👩‍👧‍👦',
-        tags: ['#family', '#gratitude', '#love']
-      }
-    ]
-  },
-  {
-    date: '15\nMAY',
-    dayName: 'Thursday',
-    relativeTime: '1 month ago',
-    entries: [
-      {
-        journal_entry_id: '6',
-        content: 'Project Launch Success',
-        created_at: '2025-05-15T11:30:00Z',
-        emoji: '🚀',
-        tags: ['#achievement', '#work', '#celebration']
-      }
-    ]
-  }
+const PASTEL_COLORS = [
+  '#E6F3FF', // Soft blue
+  '#F0E6FF', // Soft purple
+  '#E6FFFA', // Soft mint
+  '#FFF0E6', // Soft peach
+  '#F0FFE6', // Soft sage
 ];
 
+const DEFAULT_EMOJIS = ['📝', '💭', '🌟', '💡', '🎯', '🌱', '🔥', '⚡', '🌈', '🎨'];
+const DEFAULT_TAGS = ['reflection', 'thoughts', 'journey', 'growth', 'mindfulness'];
+
+function getRandomEmoji(): string {
+  return DEFAULT_EMOJIS[Math.floor(Math.random() * DEFAULT_EMOJIS.length)];
+}
+
+function getRandomTags(): string[] {
+  const shuffled = [...DEFAULT_TAGS].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.floor(Math.random() * 3) + 1);
+}
+
+function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
+  const grouped: { [key: string]: GroupedEntry } = {};
+  
+  entries.forEach(entry => {
+    const date = new Date(entry.created_at);
+    const dateKey = date.toDateString();
+    
+    if (!grouped[dateKey]) {
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      let relativeTime = '';
+      if (diffDays === 1) {
+        relativeTime = 'Yesterday';
+      } else if (diffDays < 7) {
+        relativeTime = `${diffDays} days ago`;
+      } else if (diffDays < 30) {
+        relativeTime = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+      } else {
+        relativeTime = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+      }
+      
+      grouped[dateKey] = {
+        dateNumber: date.getDate().toString(),
+        dateMonth: date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+        dayName: date.toLocaleDateString('en-US', { weekday: 'long' }),
+        relativeTime,
+        entries: []
+      };
+    }
+    
+    grouped[dateKey].entries.push({
+      ...entry,
+      emoji: getRandomEmoji(),
+      tags: getRandomTags()
+    });
+  });
+  
+  return Object.values(grouped).sort((a, b) => 
+    new Date(b.entries[0].created_at).getTime() - new Date(a.entries[0].created_at).getTime()
+  );
+}
+
 export default function JournalScreen() {
-  const [loading, setLoading] = useState(false);
+  const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [groupedEntries] = useState<GroupedEntry[]>(DUMMY_DATA);
+  
+  const groupedEntries = groupEntriesByDate(entries);
 
-  const loadEntries = async () => {
-    setRefreshing(false);
-  };
+  useEffect(() => {
+    if (!hasLoaded) {
+      fetchEntries();
+    }
+  }, [hasLoaded, fetchEntries]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    loadEntries();
+    await fetchEntries();
+    setRefreshing(false);
   };
 
   const handleNewEntry = () => {
@@ -113,7 +110,7 @@ export default function JournalScreen() {
     });
   };
 
-  if (loading) {
+  if (isLoading && !hasLoaded) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafa', alignItems: 'center', justifyContent: 'center' }}>
         <LoadingSpinner size="large" />
@@ -123,27 +120,6 @@ export default function JournalScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafa' }}>
-      {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#1f2937' }}>Journal</Text>
-          <TouchableOpacity
-            onPress={handleNewEntry}
-            style={{
-              padding: 12,
-              backgroundColor: '#3b82f6',
-              borderRadius: 50,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="add" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Timeline */}
       <ScrollView
@@ -153,10 +129,16 @@ export default function JournalScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
+        {/* Header */}
+        <View style={{ paddingHorizontal: 10, paddingTop: 16, paddingBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+            <Text style={{ fontSize: 36, fontWeight: '200', color: '#1f2937' }}>Your Entries</Text>
+          </View>
+        </View>
         {groupedEntries.map((group, groupIndex) => (
           <View key={groupIndex} style={{ marginBottom: 32 }}>
             {/* Date Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
               {/* Date Block */}
               <View
                 style={{
@@ -169,26 +151,30 @@ export default function JournalScreen() {
                   marginRight: 16,
                   borderWidth: 1,
                   borderColor: '#e2e8f0',
+                  flexDirection: 'column',
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151', textAlign: 'center', lineHeight: 18 }}>
-                  {group.date}
+                <Text style={{ fontSize: 20, fontWeight: '700', color: '#374151', textAlign: 'center', lineHeight: 28 }}>
+                  {group.dateNumber}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', lineHeight: 14 }}>
+                  {group.dateMonth}
                 </Text>
               </View>
 
               {/* Date Info */}
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '600', color: '#1f2937', marginBottom: 2 }}>
-                  {group.dayName}
+                <Text style={{ fontSize: 20, fontWeight: '600', color: '#1f2937', marginBottom: 2 }}>
+                  {group.dayName }
                 </Text>
-                <Text style={{ fontSize: 14, color: '#9ca3af' }}>
+                <Text style={{ fontSize: 14, color: '#9ca3af', textTransform: 'uppercase', fontWeight: '600' }}>
                   {group.relativeTime}
                 </Text>
               </View>
             </View>
 
             {/* Entries for this date */}
-            <View style={{ marginLeft: 76 }}>
+            <View style={{ marginLeft: 32 }}>
               {group.entries.map((entry, entryIndex) => (
                 <TouchableOpacity
                   key={entry.journal_entry_id}
@@ -209,7 +195,7 @@ export default function JournalScreen() {
                     <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 16, fontWeight: '600', color: '#1f2937', marginBottom: 4 }}>
-                        {entry.content}
+                        {entry.title}
                       </Text>
                       <Text style={{ fontSize: 13, color: '#9ca3af' }}>
                         {formatTime(entry.created_at)}
@@ -223,7 +209,7 @@ export default function JournalScreen() {
                       <View
                         key={tagIndex}
                         style={{
-                          backgroundColor: '#f1f5f9',
+                          backgroundColor: PASTEL_COLORS[entryIndex + tagIndex % PASTEL_COLORS.length],
                           borderRadius: 12,
                           paddingHorizontal: 10,
                           paddingVertical: 4,
@@ -244,7 +230,7 @@ export default function JournalScreen() {
         ))}
 
         {/* Empty State */}
-        {groupedEntries.length === 0 && (
+        {groupedEntries.length === 0 && hasLoaded && (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
             <Text style={{ fontSize: 48, marginBottom: 16 }}>📔</Text>
             <Text style={{ fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
