@@ -36,12 +36,6 @@ export class GraphProcessorService {
         }
       }
 
-      // Update journal entry as processed
-      await client.query(
-        'UPDATE journal_entries SET graph_processed = true, entities_extracted = $1, relationships_extracted = $2 WHERE journal_entry_id = $3',
-        [JSON.stringify(extraction.nodes), JSON.stringify(extraction.edges), entryId]
-      );
-
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');

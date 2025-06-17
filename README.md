@@ -22,19 +22,17 @@ Journal AI is a **personal thought partner** — a quiet space where you can:
 
 | Layer      | Tech                             |
 |------------|----------------------------------|
-| Mobile App | React Native (voice + journaling)|
-| Web App    | Next.js (landing + optional web) |
+| Mobile App | Expo + React Native |
 | AI Engine  | GPT-4.1 Mini (chat), GPT-4o (analysis) |
-| Vector DB  | Supabase + `pgvector` (entry similarity) |
-| Graph DB   | Neo4j (emotional relationship graph) |
-| Auth       | Supabase Auth                    |
-| Infra      | Turborepo + pnpm + monorepo      |
+| Vector DB  | Postgres + `pgvector` (entry similarity) |
+| Graph DB   | Postgres |
+| Auth       | Better Auth                    |
+| Infra      | Turborepo + pnpm      |
 
 ---
 
 ## 🎯 Core Features (v1)
 
-- ✅ **Voice journaling** via device mic
 - ✅ **Conversational AI** that reflects and prompts gently
 - ✅ **Emotion tagging + topic extraction** after each entry
 - ✅ **User profile** that evolves over time, enriching prompts
@@ -44,6 +42,7 @@ Journal AI is a **personal thought partner** — a quiet space where you can:
 
 ## 🧪 Coming Soon
 
+- ✅ **Voice journaling** via device mic
 - 🔍 **"Soul Map" graph UI** showing how your emotions, people, and experiences interconnect
 - ✨ **Reflective prompts** based on patterns across time
 - 📊 **Emotional summaries** and thematic journaling streaks

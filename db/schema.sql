@@ -27,11 +27,10 @@ CREATE TABLE journal_entries (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   metadata JSONB DEFAULT '{}', -- Store additional context (voice transcription confidence, etc.)
-  
-  -- Graph processing fields
-  graph_processed BOOLEAN DEFAULT FALSE,
-  entities_extracted JSONB,
-  relationships_extracted JSONB,
+  title TEXT,
+  emoji TEXT,
+  user_summary TEXT,
+  ai_summary TEXT,
   
   -- Add index for user queries and vector similarity search
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -109,5 +108,3 @@ CREATE INDEX idx_edges_source_entry ON edges(source_entry_id);
 CREATE INDEX idx_node_entry_map_node ON node_entry_map(node_id);
 CREATE INDEX idx_node_entry_map_entry ON node_entry_map(entry_id);
 CREATE INDEX idx_node_entry_map_user ON node_entry_map(user_id);
-
-CREATE INDEX idx_journal_entries_graph_processed ON journal_entries(graph_processed);

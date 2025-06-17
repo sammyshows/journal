@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
-    "@repo/ai": "workspace:*",
     "autoprefixer": "^10.4.21",
     "next": "^15.3.0",
     "pg": "^8.12.0",
