@@ -8,9 +8,13 @@ export interface JournalEntry {
   user_id: string;
   content: string;
   embedding?: number[];
+  metadata?: Record<string, any>;
+  title?: string;
+  emoji?: string;
+  user_summary?: string;
+  ai_summary?: string;
   created_at?: Date;
   updated_at?: Date;
-  metadata?: Record<string, any>;
 }
 
 export interface Entity {

@@ -22,14 +22,18 @@ export class DatabaseService implements OnModuleDestroy {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
-        `INSERT INTO journal_entries (user_id, content, embedding, metadata) 
-         VALUES ($1, $2, $3, $4) 
+        `INSERT INTO journal_entries (user_id, content, embedding, metadata, title, emoji, user_summary, ai_summary) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
          RETURNING journal_entry_id`,
         [
           entry.user_id,
           entry.content,
           entry.embedding ? `[${entry.embedding.join(',')}]` : null,
-          JSON.stringify(entry.metadata || {})
+          JSON.stringify(entry.metadata || {}),
+          entry.title,
+          entry.emoji,
+          entry.user_summary,
+          entry.ai_summary
         ]
       );
       return result.rows[0].journal_entry_id;

@@ -59,3 +59,17 @@ export class JournalEntriesResponseDto {
   @ApiProperty({ type: PaginationInfo })
   pagination: PaginationInfo;
 }
+
+export class JournalSummaries {
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  emoji: string;
+
+  @ApiProperty()
+  userSummary: string;
+
+  @ApiProperty()
+  aiSummary: string;
+}

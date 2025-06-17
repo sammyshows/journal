@@ -3,7 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
 import { EntityExtractionService } from '../common/entity-extraction.service';
 import { GraphProcessorService } from '../common/graph-processor.service';
-import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto } from './journal.dto';
+import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, JournalSummaries } from './journal.dto';
 import { ChatMessage } from '../chat/chat.dto';
 
 @Injectable()
@@ -70,54 +70,79 @@ export class JournalService {
 
   async finishJournalEntry(finishRequest: FinishRequestDto): Promise<FinishResponseDto> {
     const { chat, userId } = finishRequest;
-
+  
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid chat data');
     }
+  
+    console.log('Processing journal entry...');
+  
+    const chatText = chat.length === 1
+      ? chat[0]?.content || 'Oops, no content.'
+      : chat.map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`).join("\n");
+  
+    // Default variables
+    let embedding = null;
+    let summaries = { title: null, emoji: null, userSummary: null, aiSummary: null };
+    let extraction = { nodes: [], edges: [] };
 
-    console.log('Processing chat for embeddings and database storage...');
+    // Run all AI-related work in parallel
+    const [embeddingResult, summaryResult, graphResult] = await Promise.allSettled([
+      this.aiService.getEmbeddings(chatText),
+      this.aiService.summarizeJournalEntry(chatText),
+      this.entityExtractionService.extractNodesAndEdges(chatText)
+    ]);
     
-    let chatText: string;
-    if (chat.length === 1) {
-      chatText = chat[0]?.content || 'Oops, no content.';
-    } else {
-      chatText = chat
-        .map(msg => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
-        .join("\n");
-    }
+    if (embeddingResult.status === 'fulfilled')
+      embedding = embeddingResult.value;
+    else
+      console.warn("Embedding generation failed:", embeddingResult.reason);
     
-    const embedding = await this.aiService.getEmbeddings(chatText);
+    if (summaryResult.status === 'fulfilled')
+      summaries = summaryResult.value;
+    else
+      console.warn("Summarization failed:", summaryResult.reason);
+    
+    if (graphResult.status === 'fulfilled')
+      extraction = graphResult.value;
+    else
+      console.warn("Graph extraction failed:", graphResult.reason);
+  
+    console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
     
     const entryId = await this.databaseService.saveJournalEntry({
       user_id: userId || 'default-user',
       content: chatText,
-      embedding: embedding,
+      embedding,
+      title: summaries.title,
+      emoji: summaries.emoji,
+      user_summary: summaries.userSummary,
+      ai_summary: summaries.aiSummary,
       metadata: {
         message_count: chat.length,
         created_via: 'web_app',
         model_used: 'voyage-3-large'
       }
     });
-    
+  
     console.log(`Journal entry saved with ID: ${entryId}`);
-    
-    // Process graph data synchronously (with error handling)
+  
+    // Process graph data (non-blocking, logs errors only)
     try {
-      console.log('Processing graph data synchronously...');
-      const extraction = await this.entityExtractionService.extractNodesAndEdges(chatText);
-      console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
-      
-      await this.graphProcessorService.processJournalEntryForGraph(userId || 'default-user', entryId, extraction);
+      await this.graphProcessorService.processJournalEntryForGraph(
+        userId || 'default-user',
+        entryId,
+        extraction
+      );
       console.log('Graph processing completed successfully');
     } catch (error) {
       console.warn('Graph processing failed (continuing without graph data):', error);
-      // Don't fail the main request if graph processing fails
     }
-    
-    return { 
-      success: true, 
+  
+    return {
+      success: true,
       entryId,
-      message: 'Journal entry successfully saved and processed for graph data'
+      message: 'Journal entry successfully saved and processed.'
     };
-  }
+  }  
 }
