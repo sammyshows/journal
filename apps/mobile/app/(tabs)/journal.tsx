@@ -6,33 +6,14 @@ import { router } from 'expo-router';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { JournalEntry } from '../../services/api';
 import { useJournalStore } from '../../stores/useJournalStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 interface GroupedEntry {
   dateNumber: string;
   dateMonth: string;
   dayName: string;
   relativeTime: string;
-  entries: (JournalEntry & { emoji: string; tags: string[] })[];
-}
-
-const PASTEL_COLORS = [
-  '#E6F3FF', // Soft blue
-  '#F0E6FF', // Soft purple
-  '#E6FFFA', // Soft mint
-  '#FFF0E6', // Soft peach
-  '#F0FFE6', // Soft sage
-];
-
-const DEFAULT_EMOJIS = ['📝', '💭', '🌟', '💡', '🎯', '🌱', '🔥', '⚡', '🌈', '🎨'];
-const DEFAULT_TAGS = ['reflection', 'thoughts', 'journey', 'growth', 'mindfulness'];
-
-function getRandomEmoji(): string {
-  return DEFAULT_EMOJIS[Math.floor(Math.random() * DEFAULT_EMOJIS.length)];
-}
-
-function getRandomTags(): string[] {
-  const shuffled = [...DEFAULT_TAGS].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, Math.floor(Math.random() * 3) + 1);
+  entries: (JournalEntry)[];
 }
 
 function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
@@ -67,11 +48,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
       };
     }
     
-    grouped[dateKey].entries.push({
-      ...entry,
-      emoji: getRandomEmoji(),
-      tags: getRandomTags()
-    });
+    grouped[dateKey].entries.push(entry);
   });
   
   return Object.values(grouped).sort((a, b) => 
@@ -82,6 +59,8 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
 export default function JournalScreen() {
   const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
+
+  const insets = useSafeAreaInsets()
   
   const groupedEntries = groupEntriesByDate(entries);
 
@@ -119,7 +98,11 @@ export default function JournalScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafa' }}>
+    <View style={{ 
+      flex: 1, 
+      paddingTop: insets.top, 
+      paddingBottom: 0
+    }}>
 
       {/* Timeline */}
       <ScrollView
@@ -142,22 +125,20 @@ export default function JournalScreen() {
               {/* Date Block */}
               <View
                 style={{
-                  width: 60,
+                  width: 45,
                   height: 60,
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: 'rgba(237, 240, 242, 0.8)',
                   borderRadius: 12,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 16,
-                  borderWidth: 1,
-                  borderColor: '#e2e8f0',
                   flexDirection: 'column',
                 }}
               >
-                <Text style={{ fontSize: 20, fontWeight: '700', color: '#374151', textAlign: 'center', lineHeight: 28 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#374151', textAlign: 'center', lineHeight: 28 }}>
                   {group.dateNumber}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', lineHeight: 14 }}>
+                <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', lineHeight: 14, fontWeight: '600' }}>
                   {group.dateMonth}
                 </Text>
               </View>
@@ -184,9 +165,10 @@ export default function JournalScreen() {
                     padding: 16,
                     marginBottom: entryIndex === group.entries.length - 1 ? 0 : 12,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.12,
+                    shadowRadius: 50,
+                    
                     elevation: 4,
                   }}
                 >
@@ -194,10 +176,10 @@ export default function JournalScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
                     <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#1f2937', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#1f2937', marginBottom: 4 }}>
                         {entry.title}
                       </Text>
-                      <Text style={{ fontSize: 13, color: '#9ca3af' }}>
+                      <Text style={{ fontSize: 11, color: '#9ca3af' }}>
                         {formatTime(entry.created_at)}
                       </Text>
                     </View>
@@ -205,11 +187,11 @@ export default function JournalScreen() {
 
                   {/* Tags */}
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {entry.tags.map((tag, tagIndex) => (
+                    {entry.tags?.map((tag, tagIndex) => (
                       <View
                         key={tagIndex}
                         style={{
-                          backgroundColor: PASTEL_COLORS[entryIndex + tagIndex % PASTEL_COLORS.length],
+                          backgroundColor: '#E6F3FF',
                           borderRadius: 12,
                           paddingHorizontal: 10,
                           paddingVertical: 4,
@@ -217,7 +199,7 @@ export default function JournalScreen() {
                           marginBottom: 4,
                         }}
                       >
-                        <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '500' }}>
+                        <Text style={{ fontSize: 10, color: '#64748b', fontWeight: '500' }}>
                           {tag}
                         </Text>
                       </View>
@@ -260,6 +242,6 @@ export default function JournalScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

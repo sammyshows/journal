@@ -32,7 +32,7 @@ const TabBarAddButton = () => {
       onPress={handlePress}
       style={{
         position: 'absolute',
-        bottom: 20,
+        bottom: 10,
         alignSelf: 'center',
         zIndex: 10,
       }}
@@ -40,7 +40,7 @@ const TabBarAddButton = () => {
       <Animated.View
         style={[
           {
-            backgroundColor: '#ec8320',
+            backgroundColor: '#035afc',
             width: 64,
             height: 64,
             borderRadius: 24,

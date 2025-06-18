@@ -9,6 +9,11 @@ export interface JournalEntry {
     created_via?: string;
     model_used?: string;
   };
+  emoji?: string;
+  tags?: string[];
+  title?: string;
+  user_summary?: string;
+  ai_summary?: string;
 }
 
 export interface ChatMessage {

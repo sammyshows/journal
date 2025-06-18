@@ -19,12 +19,12 @@ export default function NewJournalEntry() {
   const [transcription, setTranscription] = useState('');
   const textInputRef = useRef<TextInput>(null);
 
-  useEffect(() => {
-    // Auto-focus text input when in text mode
-    if (mode === 'text' && textInputRef.current) {
-      setTimeout(() => textInputRef.current?.focus(), 300);
-    }
-  }, [mode]);
+  // useEffect(() => {
+  //   // Auto-focus text input when in text mode
+  //   if (mode === 'text' && textInputRef.current) {
+  //     setTimeout(() => textInputRef.current?.focus(), 300);
+  //   }
+  // }, [mode]);
 
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
