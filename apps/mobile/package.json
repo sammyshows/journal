@@ -29,7 +29,6 @@
     "expo-symbols": "~0.4.4",
     "expo-system-ui": "~5.0.7",
     "expo-web-browser": "~14.1.6",
-    "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
@@ -50,9 +49,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "metro-react-native-babel-preset": "^0.77.0",
-    "prettier-plugin-tailwindcss": "^0.5.14",
     "react-native-dotenv": "^3.4.11",
-    "tailwindcss": "^3.4.17",
     "typescript": "~5.8.3"
   },
   "private": true
