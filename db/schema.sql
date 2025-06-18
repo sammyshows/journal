@@ -36,6 +36,14 @@ CREATE TABLE journal_entries (
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+CREATE TABLE journal_entry_tags (
+  journal_entry_tag_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  journal_entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  tag TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Nodes: Core concepts/emotions/themes extracted from entries
 CREATE TABLE nodes (
   node_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

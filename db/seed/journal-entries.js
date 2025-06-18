@@ -1,16 +1,25 @@
-
-
 const logSQL = () => {
-  const sql = 'INSERT INTO journal_entries (journal_entry_id, user_id, title, emoji, user_summary, ai_summary, content, embedding, metadata, created_at, updated_at) VALUES\n' +
-  getEntries()
-    .map(
+  const entries = getEntries();
+  
+  // Generate entries SQL
+  const entriesSQL = 'INSERT INTO journal_entries (journal_entry_id, user_id, title, emoji, user_summary, ai_summary, content, embedding, metadata, created_at, updated_at) VALUES\n' +
+    entries.map(
       (e) =>
         `('${e.journal_entry_id}', '${e.user_id}', '${e.title.replace(/'/g, "''")}', '${e.emoji}', '${e.user_summary.replace(/'/g, "''")}', '${e.ai_summary.replace(/'/g, "''")}', '${e.content.replace(/'/g, "''")}', ${e.embedding || "'[]'::vector"}, ${e.metadata ? `'${JSON.stringify(e.metadata)}'` : "NULL"}, '${e.created_at}'::timestamp, '${e.updated_at}'::timestamp)`
     )
     .join(',\n') +
+  ';\n\n';
+
+  // Generate tags SQL
+  const tagsSQL = 'INSERT INTO journal_entry_tags (tag, journal_entry_id, created_at, updated_at) VALUES\n' +
+    entries.flatMap(entry => 
+      entry.tags.map(tag => 
+        `('${tag.replace(/'/g, "''")}', '${entry.journal_entry_id}', '${entry.created_at}'::timestamptz, '${entry.updated_at}'::timestamptz)`
+      )
+    ).join(',\n') +
   ';';
 
-  console.log(sql);
+  console.log(entriesSQL + tagsSQL);
 };
 
 const getEntries = () => [
@@ -19,6 +28,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Disappointing Physio',
     emoji: '😒',
+    tags: ['physio', 'workout', 'injury'],
     user_summary: `Struggling with lack of motivation for basic physical therapy exercises, despite being eager to recover from an ankle injury.`,
     ai_summary: `The user's experience highlights a common pattern of anticipation and disappointment around rehabilitation, where the imagined challenge exceeds the reality. This suggests a need for more engaging, personalized approaches to maintain long-term motivation during the recovery process.`,
     content: `I've been doing physio for my bad ankle lately. I hurt it running and I'm eager to get back to running. Interestingly, I was super motivated to do the work I was anticipating the physio to give me, because in the past I've been pretty bad in that department. I was very motivated BUT as soon as I got the exercises, I was underwhelmed and my motivation was gone! That surprised me. I think I was imagining more interesting exercises that I haven't heard of before, or some more advanced and technical work, but ultimately the exercises were incredibly basic and boring. I lost my inspiration from that I think.`,
@@ -32,6 +42,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Colleague Departure',
     emoji: '😔',
+    tags: ['work', 'colleague', 'work-life balance'],
     user_summary: `Feeling sadness over a close colleague leaving the company, despite valuing work-life balance.`,
     ai_summary: `The user has formed a strong personal connection to a work colleague, indicating a reliance on the workplace for emotional fulfillment. The departure of this colleague is causing mixed feelings, as the user values work-life balance but still experiences a sense of loss over the relationship.`,
     content: `Today I was working and I found out that a colleague is leaving! I'm close with them, probably the closest colleague I have. I emphasise having a good work-life balance, but it still sucks to see someone I like from the work side move on. I hope I cross paths with them again in future.`,
@@ -45,6 +56,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Rethinking AI in Journals',
     emoji: '💡',
+    tags: ['ai', 'journal', 'product'],
     user_summary: `Had an insight that the journal app doesn't need to be so AI-focused, and that this realization can reshape the product in a meaningful way.`,
     ai_summary: `This entry reflects a creative breakthrough moment, where the user challenges assumptions about the prominence of AI in the journaling experience. This suggests a desire for a more balanced or user-centric approach, which could lead to significant product improvements. The user\'s enthusiasm for idea development indicates an innovative mindset.`,
     content: `Today I had an epiphany - maybe the journal app doesn't need to be so AI centric. I mean, yes, AI is fundemental to what it does and completely necessary, but that doesn't mean the user has to know that? I love these moments because these are what go on to shape the product completely differently, I love idea developoment!`,
@@ -58,6 +70,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Music Genres Galore',
     emoji: '🎶',
+    tags: ['music', 'brother', 'rap'],
     user_summary: `Reflects on their diverse music tastes, from rap to country, and the personal connections they have to different genres.`,
     ai_summary: `The user's musical preferences seem to be heavily influenced by their upbringing and personal experiences, from the motivational rap they listened to while working out, to the country music that reminds them of their family. This suggests a strong link between music and identity, as well as the ability of different genres to evoke specific memories and emotions.`,
     content: `I love music! I find myself often jumping between genres! I used to be really into rap. I loved Listening to 50 cent, eminem, jay z, kanye, kendrick etc. but 50 Cent was just cool... he got me fired up when I started going to the gym. I'll always remember that. Sometimes I even like country music! I grew up in a family that liked their country music, so it's part of me too. My brother nearly exlusively listens to country, but he's a farmer, so he's living the ethos`,
@@ -71,6 +84,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Unorganized Schedules',
     emoji: '💏',
+    tags: ['kids', 'relationship', 'schedules'],
     user_summary: `Had a fight with partner over dropping off kids due to disorganized schedules, but it brought them closer together and reminded them what\'s most important.`,
     ai_summary: `The journal entry reveals a breakdown in communication and coordination between the partners, leading to an argument. However, the resolution highlights their ability to prioritize their relationship and family over rigid schedules, suggesting a foundation of mutual understanding and care.`,
     content: `My partner and I had a fight this morning. We both had busy schedules ahead, and each thought the other was taking the kids to school. This resulted in us arguing about who was meant to do it, but ultimately we realised we just clearly weren't organised enough as a team. I decided I'll take the kids and she really appreciated that. I think it was for the best actually, it really earthed us and reminded us that our schedules aren't everything`,
@@ -84,6 +98,7 @@ const getEntries = () => [
     user_id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Nourishing Connections',
     emoji: '🎳',
+    tags: ['friends', 'rejuvenating', 'socialising'],
     user_summary: `Spending quality time with friends through activities and meaningful conversations was rejuvenating and highlighted the importance of those connections.`,
     ai_summary: `The journal entry reflects a deeply fulfilling social experience that provided emotional replenishment and renewed appreciation for close relationships. The author seems to have gained insight into the restorative power of nurturing friendships and shared experiences.`,
     content: `We caught up with some friends last night to go bowling and had them over for some games afterwards at our house. It was very fun, and surprisingly it was very rejuvenating for my fiancee and I. The next morning, we went for a walk, and talk about some important and meaningful things and had a absolutely wonderful chat. This energy continued all day and it was really nice. It made me realise the importance of having good quality time with our friends.`,
