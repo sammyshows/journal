@@ -7,6 +7,8 @@ import { VoiceMicButton } from '../../components/VoiceMicButton';
 import { FloatingToggle } from '../../components/FloatingToggle';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService } from '../../services/api';
+import { addEntry } from '../../services/journalDatabase';
+import { v4 as uuidv4 } from 'uuid';
 
 type Mode = 'text' | 'voice' | 'mixed';
 
@@ -85,7 +87,10 @@ export default function NewJournalEntry() {
 
     setIsSaving(true);
     try {
-      const result = await apiService.createJournalEntry(finalContent);
+      const journal_entry_id = uuidv4();
+      saveToLocalDatabase(journal_entry_id, finalContent);
+
+      const result = await apiService.createJournalEntry(journal_entry_id, finalContent);
       
       Alert.alert(
         'Entry Saved!', 
@@ -103,6 +108,14 @@ export default function NewJournalEntry() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const saveToLocalDatabase = async (content: string) => {
+    await addEntry({
+      journal_entry_id: uuidv4(),
+      userId: '123e4567-e89b-12d3-a456-426614174000',
+      content: content
+    });
   };
 
   const handleClose = () => {
