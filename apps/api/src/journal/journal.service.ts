@@ -24,10 +24,18 @@ export class JournalService {
     
     try {
       let query = `
-        SELECT 
-          content,
-          created_at
-        FROM journal_entries
+        SELECT
+          je.journal_entry_id,
+          je.title,
+          je.emoji,
+          je.content,
+          je.user_summary,
+          je.created_at,
+          je.updated_at,
+          COALESCE(array_agg(jet.tag) FILTER (WHERE jet.tag IS NOT NULL), ARRAY[]::text[]) as tags
+        FROM journal_entries je
+        LEFT JOIN journal_entry_tags jet ON je.journal_entry_id = jet.journal_entry_id
+        GROUP BY je.journal_entry_id, je.title, je.emoji, je.content, je.user_summary, je.created_at, je.updated_at
       `;
       const params: any[] = [];
 

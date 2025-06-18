@@ -11,6 +11,7 @@ export interface JournalEntry {
   metadata?: Record<string, any>;
   title?: string;
   emoji?: string;
+  tags?: string[];
   user_summary?: string;
   ai_summary?: string;
   created_at?: Date;
