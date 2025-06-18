@@ -4,6 +4,10 @@ import { Type } from 'class-transformer';
 import { ChatMessage } from '../chat/chat.dto';
 
 export class FinishRequestDto {
+  @ApiProperty({ required: true })
+  @IsString()
+  journal_entry_id: string
+
   @ApiProperty({ type: [ChatMessage] })
   @IsArray()
   @ValidateNested({ each: true })
@@ -35,29 +39,12 @@ export class JournalEntry {
   created_at: Date;
 }
 
-export class PaginationInfo {
-  @ApiProperty()
-  total: number;
-
-  @ApiProperty()
-  limit: number;
-
-  @ApiProperty()
-  offset: number;
-
-  @ApiProperty()
-  hasMore: boolean;
-}
-
 export class JournalEntriesResponseDto {
   @ApiProperty()
   success: boolean;
 
   @ApiProperty({ type: [JournalEntry] })
   data: JournalEntry[];
-
-  @ApiProperty({ type: PaginationInfo })
-  pagination: PaginationInfo;
 }
 
 export class JournalSummaries {

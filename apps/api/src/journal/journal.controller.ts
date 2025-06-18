@@ -10,21 +10,10 @@ export class JournalController {
 
   @Get('journal-entries')
   @ApiOperation({ summary: 'Get journal entries' })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })
-  @ApiQuery({ name: 'userId', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Journal entries returned', type: JournalEntriesResponseDto })
-  async getJournalEntries(
-    @Query('limit') limit: string = '50',
-    @Query('offset') offset: string = '0',
-    @Query('userId') userId?: string,
-  ): Promise<JournalEntriesResponseDto> {
+  async getJournalEntries(): Promise<JournalEntriesResponseDto> {
     try {
-      return await this.journalService.getJournalEntries(
-        parseInt(limit),
-        parseInt(offset),
-        userId,
-      );
+      return await this.journalService.getJournalEntries();
     } catch (error) {
       console.error('Journal entries query error:', error);
       throw new HttpException(

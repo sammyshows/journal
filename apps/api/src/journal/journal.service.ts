@@ -3,8 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
 import { EntityExtractionService } from '../common/entity-extraction.service';
 import { GraphProcessorService } from '../common/graph-processor.service';
-import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, JournalSummaries } from './journal.dto';
-import { ChatMessage } from '../chat/chat.dto';
+import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto } from './journal.dto';
 
 @Injectable()
 export class JournalService {
@@ -15,11 +14,7 @@ export class JournalService {
     private readonly graphProcessorService: GraphProcessorService,
   ) {}
 
-  async getJournalEntries(
-    limit: number,
-    offset: number,
-    userId?: string,
-  ): Promise<JournalEntriesResponseDto> {
+  async getJournalEntries(): Promise<JournalEntriesResponseDto> {
     const client = await this.databaseService.getClient();
     
     try {
@@ -35,41 +30,19 @@ export class JournalService {
           COALESCE(array_agg(jet.tag) FILTER (WHERE jet.tag IS NOT NULL), ARRAY[]::text[]) as tags
         FROM journal_entries je
         LEFT JOIN journal_entry_tags jet ON je.journal_entry_id = jet.journal_entry_id
+        WHERE je.user_id = $1
         GROUP BY je.journal_entry_id, je.title, je.emoji, je.content, je.user_summary, je.created_at, je.updated_at
+        ORDER BY je.created_at DESC
+        LIMIT 50
       `;
-      const params: any[] = [];
 
-      if (userId) {
-        query += ` WHERE user_id = $1`;
-        params.push(userId);
-      }
-
-      query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-      params.push(limit, offset);
+      const params: any[] = ['123e4567-e89b-12d3-a456-426614174000'];
 
       const result = await client.query(query, params);
-
-      // Get total count for pagination
-      let countQuery = 'SELECT COUNT(*) FROM journal_entries';
-      const countParams: any[] = [];
-      
-      if (userId) {
-        countQuery += ' WHERE user_id = $1';
-        countParams.push(userId);
-      }
-
-      const countResult = await client.query(countQuery, countParams);
-      const totalCount = parseInt(countResult.rows[0].count);
 
       return {
         success: true,
         data: result.rows,
-        pagination: {
-          total: totalCount,
-          limit,
-          offset,
-          hasMore: offset + limit < totalCount
-        }
       };
     } finally {
       client.release();
@@ -77,7 +50,7 @@ export class JournalService {
   }
 
   async finishJournalEntry(finishRequest: FinishRequestDto): Promise<FinishResponseDto> {
-    const { chat, userId } = finishRequest;
+    const { journal_entry_id, chat, userId } = finishRequest;
   
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid chat data');
@@ -119,6 +92,7 @@ export class JournalService {
     console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
     
     const entryId = await this.databaseService.saveJournalEntry({
+      journal_entry_id,
       user_id: userId || 'default-user',
       content: chatText,
       embedding,

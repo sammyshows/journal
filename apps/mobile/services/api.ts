@@ -99,19 +99,13 @@ const apiClient = new ApiClient();
 
 export const apiService = {
   // Journal endpoints
-  async getJournalEntries(limit: number = 50, offset: number = 0, userId?: string): Promise<JournalEntry[]> {
+  async getJournalEntries(): Promise<JournalEntry[]> {
     try {
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-        ...(userId && { userId })
-      });
       
       const response = await apiClient.get<{
         success: boolean;
         data: JournalEntry[];
-        pagination: any;
-      }>(`/journal-entries?${params}`);
+      }>(`/journal-entries`);
       
       return response.data;
     } catch (error) {
@@ -130,7 +124,7 @@ export const apiService = {
     }
   },
 
-  async createJournalEntry(content: string, userId?: string): Promise<{ success: boolean; entryId: string; message: string }> {
+  async createJournalEntry(journal_entry_id: string, content: string, userId?: string): Promise<{ success: boolean; entryId: string; message: string }> {
     try {
       const chat: ChatMessage[] = [{ role: 'user', content }];
       const response = await apiClient.post<{
@@ -138,6 +132,7 @@ export const apiService = {
         entryId: string;
         message: string;
       }>('/finish', {
+        journal_entry_id,
         chat,
         userId: userId || DEFAULT_USER_ID
       });
