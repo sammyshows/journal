@@ -7,8 +7,10 @@ import { StreakCounter } from '../../components/StreakCounter';
 import { EntryCard } from '../../components/EntryCard';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, JournalEntry, UserStats } from '../../services/api';
+import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 
 export default function HomeScreen() {
+  const {theme} = useAppSettingsStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,43 +56,48 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
         <LoadingSpinner size="large" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1, backgroundColor: theme.background }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
         {/* Header */}
-        <View className="px-6 pt-4 pb-6">
-          <Text className="text-3xl font-bold text-gray-900 mb-2">
+        <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 }}>
+          <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
             Welcome back! 👋
           </Text>
-          <Text className="text-lg text-gray-600">
+          <Text style={{ color: theme.secondaryText, fontSize: 16 }}>
             Ready to capture today's moments?
           </Text>
         </View>
 
         {/* Streak Counter */}
         {stats && (
-          <View className="px-6 mb-6">
+          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
             <StreakCounter streak={stats.streak} size="large" />
           </View>
         )}
 
         {/* Action Buttons */}
-        <View className="px-6 mb-8 space-y-4">
+        <View style={{ paddingHorizontal: 24, marginBottom: 32, gap: 16 }}>
           <TouchableOpacity
             onPress={handleNewEntry}
-            className="bg-primary-500 rounded-2xl p-4 flex-row items-center justify-center shadow-lg active:scale-95"
             style={{
+              backgroundColor: theme.primary,
+              borderRadius: 16,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
               shadowColor: '#ec8320',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
@@ -98,16 +105,21 @@ export default function HomeScreen() {
               elevation: 8,
             }}
           >
-            <Ionicons name="add-circle-outline" size={24} color="white" />
-            <Text className="text-white text-lg font-semibold ml-2">
+            <Ionicons name="add-circle-outline" size={24} color={theme.text} />
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold', marginLeft: 8 }}>
               New Journal Entry
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleChatWithAI}
-            className="bg-soft-300 rounded-2xl p-4 flex-row items-center justify-center shadow-sm active:scale-95"
             style={{
+              backgroundColor: theme.secondary,
+              borderRadius: 16,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.1,
@@ -115,26 +127,26 @@ export default function HomeScreen() {
               elevation: 3,
             }}
           >
-            <Ionicons name="chatbubble-ellipses-outline" size={24} color="#9c6c56" />
-            <Text className="text-soft-700 text-lg font-semibold ml-2">
+            <Ionicons name="chatbubble-ellipses-outline" size={24} color={theme.text} />
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold', marginLeft: 8 }}>
               Talk to AI Bestie
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Recent Entries */}
-        <View className="px-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-xl font-bold text-gray-900">Recent Entries</Text>
+        <View style={{ paddingHorizontal: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+            <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>Recent Entries</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/journal')}>
-              <Text className="text-primary-500 font-medium">See All</Text>
+              <Text style={{ color: theme.primary, fontSize: 16, fontWeight: 'medium' }}>See All</Text>
             </TouchableOpacity>
           </View>
 
           {recentEntries.length > 0 ? (
-            <View className="flex-row flex-wrap justify-between">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {recentEntries.map((entry) => (
-                <View key={entry.journal_entry_id || entry.created_at} className="mb-4">
+                <View key={entry.journal_entry_id || entry.created_at} style={{ marginBottom: 16 }}>
                   <EntryCard
                     entry={entry}
                     onPress={() => handleEntryPress(entry)}
@@ -144,9 +156,9 @@ export default function HomeScreen() {
               ))}
             </View>
           ) : (
-            <View className="bg-white rounded-2xl p-8 items-center shadow-sm border border-gray-100">
-              <Text className="text-4xl mb-4">📝</Text>
-              <Text className="text-gray-600 text-center">
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ fontSize: 48, marginBottom: 16 }}>📝</Text>
+              <Text style={{ color: theme.secondaryText, fontSize: 16, textAlign: 'center' }}>
                 No entries yet! Start your journaling journey by creating your first entry.
               </Text>
             </View>
@@ -155,22 +167,17 @@ export default function HomeScreen() {
 
         {/* Weekly Progress */}
         {stats && (
-          <View className="px-6 py-6">
-            <Text className="text-xl font-bold text-gray-900 mb-4">This Week</Text>
-            <View className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-gray-600">Progress</Text>
-                <Text className="text-primary-500 font-semibold">
+          <View style={{ paddingHorizontal: 24, paddingVertical: 24 }}>
+            <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>This Week</Text>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ color: theme.secondaryText, fontSize: 16, fontWeight: 'semibold' }}>Progress</Text>
+                <Text style={{ color: theme.primary, fontSize: 16, fontWeight: 'semibold' }}>
                   {stats.currentWeekEntries}/{stats.weeklyGoal}
                 </Text>
               </View>
-              <View className="bg-gray-200 rounded-full h-3">
-                <View
-                  className="bg-primary-500 rounded-full h-3"
-                  style={{
-                    width: `${Math.min((stats.currentWeekEntries / stats.weeklyGoal) * 100, 100)}%`
-                  }}
-                />
+              <View style={{ backgroundColor: theme.border, borderRadius: 16, height: 8 }}>
+                <View style={{ backgroundColor: theme.primary, borderRadius: 16, height: 8, width: `${Math.min((stats.currentWeekEntries / stats.weeklyGoal) * 100, 100)}%` }} />
               </View>
             </View>
           </View>

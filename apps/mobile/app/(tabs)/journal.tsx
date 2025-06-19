@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { JournalEntry } from '../../services/api';
 import { useJournalStore } from '../../stores/useJournalStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 
 interface GroupedEntry {
   dateNumber: string;
@@ -57,6 +58,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
 }
 
 export default function JournalScreen() {
+  const { theme } = useAppSettingsStore();
   const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -91,7 +93,7 @@ export default function JournalScreen() {
 
   if (isLoading && !hasLoaded) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafa', alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
         <LoadingSpinner size="large" />
       </SafeAreaView>
     );
@@ -101,7 +103,8 @@ export default function JournalScreen() {
     <View style={{ 
       flex: 1, 
       paddingTop: insets.top, 
-      paddingBottom: 0
+      paddingBottom: 0,
+      backgroundColor: theme.background
     }}>
 
       {/* Timeline */}
@@ -115,7 +118,7 @@ export default function JournalScreen() {
         {/* Header */}
         <View style={{ paddingHorizontal: 10, paddingTop: 16, paddingBottom: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
-            <Text style={{ fontSize: 36, fontWeight: '200', color: '#1f2937' }}>Your Entries</Text>
+            <Text style={{ fontSize: 36, fontWeight: '200', color: theme.text }}>Your Entries</Text>
           </View>
         </View>
         {groupedEntries.map((group, groupIndex) => (
@@ -127,7 +130,7 @@ export default function JournalScreen() {
                 style={{
                   width: 45,
                   height: 60,
-                  backgroundColor: 'rgba(237, 240, 242, 0.8)',
+                  backgroundColor: theme.surface,
                   borderRadius: 12,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -135,20 +138,20 @@ export default function JournalScreen() {
                   flexDirection: 'column',
                 }}
               >
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#374151', textAlign: 'center', lineHeight: 28 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, textAlign: 'center', lineHeight: 28 }}>
                   {group.dateNumber}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', lineHeight: 14, fontWeight: '600' }}>
+                <Text style={{ fontSize: 12, color: theme.secondaryText, textAlign: 'center', lineHeight: 14, fontWeight: '600' }}>
                   {group.dateMonth}
                 </Text>
               </View>
 
               {/* Date Info */}
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Text style={{ fontSize: 20, fontWeight: '600', color: '#1f2937', marginBottom: 2 }}>
+                <Text style={{ fontSize: 20, fontWeight: '600', color: theme.text, marginBottom: 2 }}>
                   {group.dayName }
                 </Text>
-                <Text style={{ fontSize: 14, color: '#9ca3af', textTransform: 'uppercase', fontWeight: '600' }}>
+                <Text style={{ fontSize: 14, color: theme.secondaryText, textTransform: 'uppercase', fontWeight: '600' }}>
                   {group.relativeTime}
                 </Text>
               </View>
@@ -160,11 +163,11 @@ export default function JournalScreen() {
                 <TouchableOpacity
                   key={entry.journal_entry_id}
                   style={{
-                    backgroundColor: 'white',
+                    backgroundColor: theme.surface,
                     borderRadius: 16,
                     padding: 16,
                     marginBottom: entryIndex === group.entries.length - 1 ? 0 : 12,
-                    shadowColor: '#000',
+                    shadowColor: theme.border,
                     shadowOffset: { width: 0, height: 6 },
                     shadowOpacity: 0.12,
                     shadowRadius: 50,
@@ -176,10 +179,10 @@ export default function JournalScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
                     <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#1f2937', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>
                         {entry.title}
                       </Text>
-                      <Text style={{ fontSize: 11, color: '#9ca3af' }}>
+                      <Text style={{ fontSize: 11, color: theme.secondaryText }}>
                         {formatTime(entry.created_at)}
                       </Text>
                     </View>
@@ -191,7 +194,7 @@ export default function JournalScreen() {
                       <View
                         key={tagIndex}
                         style={{
-                          backgroundColor: '#E6F3FF',
+                          backgroundColor: theme.emotionTag,
                           borderRadius: 12,
                           paddingHorizontal: 10,
                           paddingVertical: 4,
@@ -199,7 +202,7 @@ export default function JournalScreen() {
                           marginBottom: 4,
                         }}
                       >
-                        <Text style={{ fontSize: 10, color: '#64748b', fontWeight: '500' }}>
+                        <Text style={{ fontSize: 10, color: theme.text, fontWeight: '500' }}>
                           {tag}
                         </Text>
                       </View>
@@ -215,27 +218,27 @@ export default function JournalScreen() {
         {groupedEntries.length === 0 && hasLoaded && (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 48 }}>
             <Text style={{ fontSize: 48, marginBottom: 16 }}>📔</Text>
-            <Text style={{ fontSize: 18, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+            <Text style={{ fontSize: 18, fontWeight: '600', color: theme.text, marginBottom: 8 }}>
               No entries yet
             </Text>
-            <Text style={{ fontSize: 14, color: '#9ca3af', textAlign: 'center', marginBottom: 24 }}>
+            <Text style={{ fontSize: 14, color: theme.secondaryText, textAlign: 'center', marginBottom: 24 }}>
               Start your journaling journey by creating your first entry
             </Text>
             <TouchableOpacity
               onPress={handleNewEntry}
               style={{
-                backgroundColor: '#3b82f6',
+                backgroundColor: theme.primary,
                 paddingHorizontal: 24,
                 paddingVertical: 12,
                 borderRadius: 50,
-                shadowColor: '#000',
+                shadowColor: theme.border,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.1,
                 shadowRadius: 8,
                 elevation: 4,
               }}
             >
-              <Text style={{ color: 'white', fontWeight: '600' }}>Create First Entry</Text>
+              <Text style={{ color: theme.surface, fontWeight: '600' }}>Create First Entry</Text>
             </TouchableOpacity>
           </View>
         )}

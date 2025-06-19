@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 type Mode = 'text' | 'voice' | 'mixed';
 
 interface FloatingToggleProps {
@@ -10,6 +10,7 @@ interface FloatingToggleProps {
 }
 
 export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProps) {
+  const { theme } = useAppSettingsStore()
   const modes: { key: Mode; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
     { key: 'text', icon: 'document-text-outline', label: 'Text' },
     { key: 'voice', icon: 'mic-outline', label: 'Voice' },
@@ -18,8 +19,14 @@ export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProp
 
   return (
     <View 
-      className="bg-white rounded-full shadow-lg border border-gray-100 p-1 flex-row items-center"
       style={{
+        backgroundColor: theme.surface,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
@@ -33,19 +40,28 @@ export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProp
           <TouchableOpacity
             key={mode.key}
             onPress={() => onModeChange(mode.key)}
-            className={`px-4 py-2 rounded-full flex-row items-center space-x-2 active:scale-95 ${
-              isActive ? 'bg-primary-500' : 'bg-transparent'
-            }`}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              active: { scale: 0.95 },
+              backgroundColor: isActive ? theme.primary : theme.surface,
+            }}
           >
             <Ionicons
               name={mode.icon}
               size={16}
-              color={isActive ? 'white' : '#6b7280'}
+              color={isActive ? theme.surface : theme.secondaryText}
             />
             <Text
-              className={`text-sm font-medium ${
-                isActive ? 'text-white' : 'text-gray-500'
-              }`}
+              style={{
+                fontSize: 14,
+                fontWeight: 'medium',
+                color: isActive ? theme.surface : theme.secondaryText,
+              }}
             >
               {mode.label}
             </Text>

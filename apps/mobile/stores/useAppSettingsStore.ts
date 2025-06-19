@@ -12,7 +12,7 @@ interface AppSettingsState {
   loadThemeFromStorage: () => Promise<void>
 }
 
-export const useAppSettings = create<AppSettingsState>((set) => ({
+export const useAppSettingsStore = create<AppSettingsState>((set) => ({
   themeMode: 'system',
   theme: Appearance.getColorScheme() === 'dark' ? darkTheme : lightTheme,
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { JournalEntry } from '../services/api';
+import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 
 interface EntryCardProps {
   entry: JournalEntry;
@@ -9,22 +10,23 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, onPress, size = 'medium' }: EntryCardProps) {
+  const { theme } = useAppSettingsStore()
   const sizeClasses = {
-    small: 'w-32 h-32',
-    medium: 'w-40 h-40',
-    large: 'w-full h-32'
+    small: 32,
+    medium: 40,
+    large: 32
   };
 
   const textSizeClasses = {
-    small: 'text-xs',
-    medium: 'text-sm',
-    large: 'text-base'
+    small: 12,
+    medium: 14,
+    large: 16
   };
 
   const emojiSizeClasses = {
-    small: 'text-xl',
-    medium: 'text-2xl',
-    large: 'text-3xl'
+    small: 24,
+    medium: 32,
+    large: 40
   };
 
   // Generate emoji based on content sentiment (simple approach)
@@ -68,8 +70,12 @@ export function EntryCard({ entry, onPress, size = 'medium' }: EntryCardProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`${sizeClasses[size]} bg-white rounded-2xl shadow-sm border border-gray-100 p-4 active:scale-95`}
       style={{ 
+        backgroundColor: theme.surface,
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: theme.border,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -77,21 +83,21 @@ export function EntryCard({ entry, onPress, size = 'medium' }: EntryCardProps) {
         elevation: 3,
       }}
     >
-      <View className="flex-1">
-        <Text className={`${emojiSizeClasses[size]} mb-2`}>{emoji}</Text>
-        <Text className={`${textSizeClasses[size]} font-semibold text-gray-800 mb-1`}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: emojiSizeClasses[size], marginBottom: 8 }}>{emoji}</Text>
+        <Text style={{ fontSize: textSizeClasses[size], fontWeight: 'semibold', color: theme.text, marginBottom: 8 }}>
           {summary}
         </Text>
-        <View className="flex-row flex-wrap gap-1 mb-2">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
           {tags.slice(0, 2).map((tag, index) => (
-            <View key={index} className="bg-primary-100 px-2 py-1 rounded-full">
-              <Text className="text-xs text-primary-700 font-medium">
+            <View key={index} style={{ backgroundColor: theme.emotionTag, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 16 }}>
+              <Text style={{ fontSize: 12, color: theme.surface, fontWeight: 'medium' }}>
                 {tag}
               </Text>
             </View>
           ))}
         </View>
-        <Text className={`${textSizeClasses[size]} text-gray-500 mt-auto`}>
+        <Text style={{ fontSize: textSizeClasses[size], color: theme.secondaryText, marginTop: 'auto' }}>
           {new Date(entry.created_at).toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric' 

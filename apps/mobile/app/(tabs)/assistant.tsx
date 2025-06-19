@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, SearchResponse } from '../../services/api';
+import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 
 interface Message {
   id: string;
@@ -13,6 +14,7 @@ interface Message {
 }
 
 export default function AssistantScreen() {
+  const { theme } = useAppSettingsStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -144,25 +146,25 @@ export default function AssistantScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-        <View className="flex-1">
-          <Text className="text-2xl font-bold text-gray-900">AI Chat</Text>
-          <Text className="text-gray-500">Chat & search your journal</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>AI Chat</Text>
+          <Text style={{ fontSize: 14, color: theme.secondaryText }}>Chat & search your journal</Text>
         </View>
-        <View className="flex-row space-x-2">
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             onPress={() => setShowSearchModal(true)}
-            className="p-2 bg-blue-100 rounded-full"
+            style={{ padding: 8, backgroundColor: theme.primary, borderRadius: 100 }}
           >
-            <Ionicons name="search" size={20} color="#3b82f6" />
+            <Ionicons name="search" size={20} color={theme.surface} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={clearChat}
-            className="p-2 bg-gray-100 rounded-full"
+            style={{ padding: 8, backgroundColor: theme.surface, borderRadius: 100 }}
           >
-            <Ionicons name="refresh" size={20} color="#6b7280" />
+            <Ionicons name="refresh" size={20} color={theme.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -170,17 +172,17 @@ export default function AssistantScreen() {
       {/* Chat Messages */}
       <ScrollView
         ref={scrollViewRef}
-        className="flex-1 px-6"
+        style={{ flex: 1, paddingHorizontal: 16 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Welcome Message */}
         {messages.length === 0 && (
-          <View className="py-8 items-center">
-            <Text className="text-4xl mb-4">🤖</Text>
-            <Text className="text-xl font-semibold text-gray-900 mb-2">
+          <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+            <Text style={{ fontSize: 48, marginBottom: 16 }}>🤖</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'semibold', color: theme.text, marginBottom: 8 }}>
               Hey there! 👋
             </Text>
-            <Text className="text-gray-600 text-center leading-6">
+            <Text style={{ fontSize: 14, color: theme.secondaryText, textAlign: 'center', lineHeight: 20 }}>
               I'm your AI journaling companion. I'm here to help you reflect, explore your thoughts, and discover insights from your entries.
             </Text>
           </View>
@@ -190,14 +192,10 @@ export default function AssistantScreen() {
         {messages.map((message) => (
           <View
             key={message.id}
-            className={`mb-4 ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+            style={{ marginBottom: 16, alignItems: message.role === 'user' ? 'flex-end' : 'flex-start' }}
           >
             <View
-              className={`max-w-[80%] p-4 rounded-2xl ${
-                message.role === 'user'
-                  ? 'bg-primary-500 rounded-br-md'
-                  : 'bg-white border border-gray-100 rounded-bl-md'
-              }`}
+              style={{ maxWidth: '80%', padding: 16, borderRadius: 16, backgroundColor: message.role === 'user' ? theme.primary : theme.surface, borderWidth: 1, borderColor: theme.border }}
               style={
                 message.role === 'assistant'
                   ? {
@@ -211,16 +209,12 @@ export default function AssistantScreen() {
               }
             >
               <Text
-                className={`text-base leading-6 ${
-                  message.role === 'user' ? 'text-white' : 'text-gray-900'
-                }`}
+                style={{ fontSize: 16, lineHeight: 24, color: message.role === 'user' ? theme.surface : theme.text }}
               >
                 {message.content}
               </Text>
               <Text
-                className={`text-xs mt-2 ${
-                  message.role === 'user' ? 'text-primary-100' : 'text-gray-400'
-                }`}
+                style={{ fontSize: 12, marginTop: 4, color: message.role === 'user' ? theme.primary : theme.secondaryText }}
               >
                 {message.timestamp.toLocaleTimeString([], { 
                   hour: '2-digit', 
@@ -233,8 +227,8 @@ export default function AssistantScreen() {
 
         {/* Loading Indicator */}
         {isLoading && (
-          <View className="items-start mb-4">
-            <View className="bg-white p-4 rounded-2xl rounded-bl-md border border-gray-100">
+          <View style={{ alignItems: 'flex-start', marginBottom: 16 }}>
+            <View style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}>
               <LoadingSpinner size="small" />
             </View>
           </View>
@@ -242,8 +236,8 @@ export default function AssistantScreen() {
 
         {/* Starter Prompts */}
         {showStarterPrompts && messages.length === 0 && (
-          <View className="py-4">
-            <Text className="text-lg font-medium text-gray-700 mb-4">
+          <View style={{ paddingVertical: 16 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
               Try asking me about:
             </Text>
             <View className="space-y-3">
@@ -251,16 +245,9 @@ export default function AssistantScreen() {
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleStarterPrompt(prompt)}
-                  className="bg-white p-4 rounded-xl border border-gray-100 active:scale-95"
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 2,
-                    elevation: 1,
-                  }}
+                  style={{ padding: 10, margin: 2, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
                 >
-                  <Text className="text-gray-700">{prompt}</Text>
+                  <Text style={{ color: theme.text }}>{prompt}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -269,13 +256,13 @@ export default function AssistantScreen() {
 
         {/* Regenerate Button */}
         {messages.length > 0 && !isLoading && (
-          <View className="items-center py-4">
+          <View style={{ alignItems: 'center', paddingVertical: 16 }}>
             <TouchableOpacity
               onPress={regenerateLastResponse}
-              className="flex-row items-center px-4 py-2 bg-gray-100 rounded-full"
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.surface, borderRadius: 100 }}
             >
               <Ionicons name="refresh" size={16} color="#6b7280" />
-              <Text className="text-gray-600 ml-2 font-medium">Regenerate</Text>
+              <Text style={{ fontSize: 16, color: theme.secondaryText, marginLeft: 8, fontWeight: 'medium' }}>Regenerate</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -284,33 +271,29 @@ export default function AssistantScreen() {
       {/* Input Area */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="bg-white border-t border-gray-100 px-6 py-4"
+        style={{ paddingHorizontal: 16, paddingVertical: 16, backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.border }}
       >
-        <View className="flex-row items-end space-x-3">
-          <View className="flex-1">
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+          <View style={{ flex: 1 }}>
             <TextInput
               value={inputText}
               onChangeText={setInputText}
               placeholder="Ask me anything about your journaling..."
               multiline
               maxLength={500}
-              className="bg-gray-100 rounded-2xl px-4 py-3 text-base max-h-32"
+              style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, textAlignVertical: 'top' }}
               style={{ textAlignVertical: 'top' }}
             />
           </View>
           <TouchableOpacity
             onPress={handleSend}
             disabled={!inputText.trim() || isLoading}
-            className={`p-3 rounded-full ${
-              inputText.trim() && !isLoading
-                ? 'bg-primary-500'
-                : 'bg-gray-300'
-            }`}
+            style={{ padding: 16, borderRadius: 100, backgroundColor: inputText.trim() && !isLoading ? theme.primary : theme.surface }}
           >
             <Ionicons
               name="send"
               size={20}
-              color={inputText.trim() && !isLoading ? 'white' : '#9ca3af'}
+              color={inputText.trim() && !isLoading ? theme.surface : theme.secondaryText}
             />
           </TouchableOpacity>
         </View>
@@ -322,24 +305,24 @@ export default function AssistantScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           {/* Search Header */}
-          <View className="flex-row items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border }}>
             <TouchableOpacity onPress={() => setShowSearchModal(false)}>
-              <Ionicons name="close" size={24} color="#374151" />
+              <Ionicons name="close" size={24} color={theme.text} />
             </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-900">Search Memories</Text>
-            <View className="w-6" />
+            <Text style={{ fontSize: 18, fontWeight: 'semibold', color: theme.text }}>Search Memories</Text>
+            <View style={{ width: 24 }} />
           </View>
 
-          <ScrollView className="flex-1 px-6 py-6">
+          <ScrollView style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16 }}>
             {/* Search Input */}
-            <View className="mb-6">
+            <View style={{ marginBottom: 16 }}>
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Ask about your past experiences..."
-                className="bg-white rounded-2xl px-4 py-4 text-base border border-gray-100"
+                style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, textAlignVertical: 'top' }}
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 1 },
@@ -353,19 +336,13 @@ export default function AssistantScreen() {
               <TouchableOpacity
                 onPress={() => handleSearch(searchQuery)}
                 disabled={!searchQuery.trim() || isSearching}
-                className={`mt-3 py-3 px-6 rounded-full ${
-                  searchQuery.trim() && !isSearching
-                    ? 'bg-blue-500'
-                    : 'bg-gray-300'
-                }`}
+                style={{ marginTop: 12, padding: 16, borderRadius: 100, backgroundColor: searchQuery.trim() && !isSearching ? theme.primary : theme.surface }}
               >
                 {isSearching ? (
                   <LoadingSpinner size="small" color="white" />
                 ) : (
                   <Text
-                    className={`text-center font-medium ${
-                      searchQuery.trim() ? 'text-white' : 'text-gray-500'
-                    }`}
+                    style={{ fontSize: 16, color: searchQuery.trim() ? theme.surface : theme.secondaryText, textAlign: 'center', fontWeight: 'medium' }}
                   >
                     Search Memories
                   </Text>
@@ -375,16 +352,16 @@ export default function AssistantScreen() {
 
             {/* Search Suggestions */}
             {!searchResult && !isSearching && (
-              <View className="mb-6">
-                <Text className="text-lg font-medium text-gray-700 mb-4">
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
                   Try asking about:
                 </Text>
-                <View className="space-y-3">
+                <View style={{ gap: 12 }}>
                   {searchSuggestions.map((suggestion, index) => (
                     <TouchableOpacity
                       key={index}
                       onPress={() => handleSearchSuggestion(suggestion)}
-                      className="bg-white p-4 rounded-xl border border-gray-100"
+                      style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
                       style={{
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 1 },
@@ -393,7 +370,7 @@ export default function AssistantScreen() {
                         elevation: 1,
                       }}
                     >
-                      <Text className="text-gray-700">{suggestion}</Text>
+                      <Text style={{ fontSize: 16, color: theme.text }}>{suggestion}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -402,14 +379,14 @@ export default function AssistantScreen() {
 
             {/* Search Results */}
             {searchResult && (
-              <View className="space-y-6">
+              <View style={{ gap: 16 }}>
                 {/* AI Response */}
-                <View className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-                  <View className="flex-row items-center mb-3">
+                <View style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                     <Ionicons name="bulb" size={20} color="#3b82f6" />
-                    <Text className="text-blue-800 font-medium ml-2">AI Insights</Text>
+                    <Text style={{ fontSize: 16, color: theme.text, marginLeft: 8, fontWeight: 'medium' }}>AI Insights</Text>
                   </View>
-                  <Text className="text-blue-700 leading-6">
+                  <Text style={{ fontSize: 16, color: theme.text, lineHeight: 24 }}>
                     {searchResult.response}
                   </Text>
                 </View>
@@ -417,14 +394,14 @@ export default function AssistantScreen() {
                 {/* Related Entries */}
                 {searchResult.related_entries && searchResult.related_entries.length > 0 && (
                   <View>
-                    <Text className="text-lg font-medium text-gray-700 mb-4">
+                    <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
                       Related Memories ({searchResult.related_entries.length})
                     </Text>
-                    <View className="space-y-4">
+                    <View style={{ gap: 16 }}>
                       {searchResult.related_entries.map((entry, index) => (
                         <View
                           key={entry.journal_entry_id}
-                          className="bg-white rounded-2xl p-4 border border-gray-100"
+                          style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
                           style={{
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 1 },
@@ -433,21 +410,21 @@ export default function AssistantScreen() {
                             elevation: 1,
                           }}
                         >
-                          <View className="flex-row items-start justify-between mb-3">
-                            <Text className="text-sm text-gray-500">
+                          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <Text style={{ fontSize: 14, color: theme.secondaryText }}>
                               {new Date(entry.created_at).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric',
                               })}
                             </Text>
-                            <View className="bg-green-100 px-2 py-1 rounded-full">
-                              <Text className="text-xs text-green-700 font-medium">
+                            <View style={{ padding: 4, borderRadius: 100, backgroundColor: theme.surface }}>
+                              <Text style={{ fontSize: 12, color: theme.text, fontWeight: 'medium' }}>
                                 {Math.round(entry.similarity_score * 100)}% match
                               </Text>
                             </View>
                           </View>
-                          <Text className="text-gray-900 leading-5">
+                          <Text style={{ fontSize: 16, color: theme.text, lineHeight: 24 }}>
                             {entry.content.length > 200 
                               ? entry.content.substring(0, 200) + '...'
                               : entry.content
@@ -460,12 +437,12 @@ export default function AssistantScreen() {
                 )}
 
                 {searchResult.related_entries && searchResult.related_entries.length === 0 && (
-                  <View className="text-center py-8">
-                    <Text className="text-4xl mb-4">🔍</Text>
-                    <Text className="text-lg font-medium text-gray-700 mb-2">
+                  <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+                    <Text style={{ fontSize: 48, marginBottom: 16 }}>🔍</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 8 }}>
                       No Related Memories Found
                     </Text>
-                    <Text className="text-gray-500 text-center">
+                    <Text style={{ fontSize: 14, color: theme.secondaryText, textAlign: 'center' }}>
                       Try searching for different emotions, events, or time periods.
                     </Text>
                   </View>

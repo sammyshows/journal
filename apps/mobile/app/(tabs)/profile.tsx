@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { StreakCounter } from '../../components/StreakCounter';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, UserStats } from '../../services/api';
+import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 
 export default function ProfileScreen() {
+  const { theme, themeMode, setThemeMode } = useAppSettingsStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [reminderTime, setReminderTime] = useState('8:00 PM');
 
@@ -32,12 +33,6 @@ export default function ProfileScreen() {
     setRemindersEnabled(value);
     // In a real app, this would save the setting
     console.log('Reminders enabled:', value);
-  };
-
-  const handleDarkModeToggle = (value: boolean) => {
-    setDarkMode(value);
-    // In a real app, this would apply the theme
-    console.log('Dark mode:', value);
   };
 
   const handleReminderTimePress = () => {
@@ -82,48 +77,44 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
         <LoadingSpinner size="large" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
-        <View className="px-6 pt-4 pb-6">
-          <Text className="text-2xl font-bold text-gray-900 mb-2">Profile</Text>
-          <Text className="text-gray-600">Manage your journaling experience</Text>
+        <View style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 }}>
+          <Text style={{ color: theme.text, fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>Profile</Text>
+          <Text style={{ color: theme.secondaryText, fontSize: 16 }}>Manage your journaling experience</Text>
         </View>
 
         {/* Stats Overview */}
         {stats && (
-          <View className="px-6 mb-8">
-            <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <Text className="text-lg font-semibold text-gray-900 mb-4">
+          <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold', marginBottom: 8 }}>
                 Your Journey
               </Text>
               
-              <View className="flex-row items-center justify-between mb-4">
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                 <StreakCounter streak={stats.streak} size="medium" />
-                <View className="flex-1 ml-6">
-                  <View className="flex-row justify-between mb-2">
-                    <Text className="text-gray-600">Total Entries</Text>
-                    <Text className="font-semibold text-gray-900">{stats.totalEntries}</Text>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">This Week</Text>
-                    <Text className="font-semibold text-gray-900">
+                <View style={{ flex: 1, marginLeft: 16 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ color: theme.secondaryText, fontSize: 16 }}>This Week</Text>
+                    <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold' }}>
                       {stats.currentWeekEntries}/{stats.weeklyGoal}
                     </Text>
                   </View>
                 </View>
               </View>
 
-              <View className="bg-gray-100 rounded-full h-2">
+              <View style={{ backgroundColor: theme.border, borderRadius: 16, height: 8 }}>
                 <View
-                  className="bg-primary-500 rounded-full h-2"
+                  style={{ backgroundColor: theme.primary, borderRadius: 16, height: 8 }}
                   style={{
                     width: `${Math.min((stats.currentWeekEntries / stats.weeklyGoal) * 100, 100)}%`
                   }}
@@ -134,52 +125,73 @@ export default function ProfileScreen() {
         )}
 
         {/* Settings Sections */}
-        <View className="px-6 space-y-6">
+        <View style={{ paddingHorizontal: 24, gap: 24 }}>
           {/* Preferences */}
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <View className="px-6 py-4 border-b border-gray-100">
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
               <Text className="text-lg font-semibold text-gray-900">Preferences</Text>
             </View>
             
-            <View className="px-6 py-4">
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="flex-row items-center">
-                  <Ionicons name="moon" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Dark Mode</Text>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="moon" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Theme</Text>
                 </View>
-                <Switch
-                  value={darkMode}
-                  onValueChange={handleDarkModeToggle}
-                  trackColor={{ false: '#e5e7eb', true: '#fde9d3' }}
-                  thumbColor={darkMode ? '#ec8320' : '#9ca3af'}
-                />
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {(['system', 'light', 'dark'] as const).map((mode) => (
+                    <TouchableOpacity
+                      key={mode}
+                      onPress={() => setThemeMode(mode)}
+                      style={{
+                        backgroundColor: themeMode === mode ? '#fde9d3' : '#f3f4f6',
+                        borderRadius: 16,
+                        paddingVertical: 4,
+                        paddingHorizontal: 6,
+                        marginLeft: mode === 'system' ? 0 : 8,
+                        borderWidth: themeMode === mode ? 1.5 : 1,
+                        borderColor: themeMode === mode ? '#ec8320' : '#e5e7eb',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: themeMode === mode ? theme.primary : theme.secondaryText,
+                          fontWeight: themeMode === mode ? '600' : 'normal',
+                          fontSize: 12,
+                        }}
+                      >
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
 
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="notifications" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Daily Reminders</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="notifications" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Daily Reminders</Text>
                 </View>
                 <Switch
                   value={remindersEnabled}
                   onValueChange={handleReminderToggle}
-                  trackColor={{ false: '#e5e7eb', true: '#fde9d3' }}
-                  thumbColor={remindersEnabled ? '#ec8320' : '#9ca3af'}
+                  trackColor={{ false: theme.border, true: theme.border }}
+                  thumbColor={remindersEnabled ? theme.primary : theme.border}
                 />
               </View>
 
               {remindersEnabled && (
                 <TouchableOpacity
                   onPress={handleReminderTimePress}
-                  className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-100"
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border }}
                 >
-                  <View className="flex-row items-center">
-                    <Ionicons name="time" size={20} color="#6b7280" />
-                    <Text className="text-gray-900 ml-3">Reminder Time</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="time" size={20} color={theme.secondaryText} />
+                    <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Reminder Time</Text>
                   </View>
-                  <View className="flex-row items-center">
-                    <Text className="text-primary-500 mr-2">{reminderTime}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#ec8320" />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: theme.primary, fontSize: 16, marginRight: 8 }}>{reminderTime}</Text>
+                    <Ionicons name="chevron-forward" size={16} color={theme.primary} />
                   </View>
                 </TouchableOpacity>
               )}
@@ -187,90 +199,90 @@ export default function ProfileScreen() {
           </View>
 
           {/* Data & Privacy */}
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <View className="px-6 py-4 border-b border-gray-100">
-              <Text className="text-lg font-semibold text-gray-900">Data & Privacy</Text>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold' }}>Data & Privacy</Text>
             </View>
             
-            <View className="px-6 py-4 space-y-4">
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, gap: 16 }}>
               <TouchableOpacity
                 onPress={handleExportData}
-                className="flex-row items-center justify-between"
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                <View className="flex-row items-center">
-                  <Ionicons name="download" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Export Data</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="download" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Export Data</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="shield-checkmark" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Privacy Policy</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="shield-checkmark" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Privacy Policy</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="document-text" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Terms of Service</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="document-text" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Terms of Service</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Support */}
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <View className="px-6 py-4 border-b border-gray-100">
-              <Text className="text-lg font-semibold text-gray-900">Support</Text>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold' }}>Support</Text>
             </View>
             
-            <View className="px-6 py-4 space-y-4">
-              <TouchableOpacity className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="help-circle" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Help Center</Text>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, gap: 16 }}>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="help-circle" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Help Center</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="mail" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Contact Support</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="mail" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Contact Support</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Ionicons name="star" size={20} color="#6b7280" />
-                  <Text className="text-gray-900 ml-3">Rate App</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="star" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Rate App</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Account */}
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8">
-            <View className="px-6 py-4 border-b border-gray-100">
-              <Text className="text-lg font-semibold text-gray-900">Account</Text>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 24 }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold' }}>Account</Text>
             </View>
             
-            <View className="px-6 py-4">
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
               <TouchableOpacity
                 onPress={handleDeleteAccount}
-                className="flex-row items-center justify-between"
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                <View className="flex-row items-center">
-                  <Ionicons name="trash" size={20} color="#ef4444" />
-                  <Text className="text-red-500 ml-3">Delete Account</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="trash" size={20} color={theme.primary} />
+                  <Text style={{ color: theme.primary, fontSize: 16, marginLeft: 8 }}>Delete Account</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#ef4444" />
+                <Ionicons name="chevron-forward" size={16} color={theme.primary} />
               </TouchableOpacity>
             </View>
           </View>
