@@ -136,23 +136,45 @@ Return ONLY a JSON object with this structure:
   }
 
   async extractNodesAndEdges(journalText: string): Promise<GraphExtractionResult> {
-    const prompt = `You are a graph-mapping assistant. Extract important nodes and edges from this journal entry that describe emotional, psychological, or narrative structure.
-
-Return this exact JSON format:
-{
-  "nodes": [
-    { "label": "self-doubt", "type": "emotion" },
-    { "label": "career", "type": "theme" },
-    { "label": "mentor", "type": "person" }
-  ],
-  "edges": [
-    { "from": "self-doubt", "to": "career", "weight": 0.8 },
-    { "from": "mentor", "to": "self-doubt", "weight": -0.4 }
-  ]
-}
-
-JOURNAL ENTRY:
-${journalText}`;
+    const prompt = `
+      You are a graph-mapping assistant that analyzes journal entries to extract **emotional, psychological, and narrative structure**.
+      
+      Your job is to identify:
+      - Key **nodes**: important people, emotions, themes, events.
+      - Key **edges**: meaningful relationships between those nodes, including direction and emotional intensity.
+      
+      📌 Output:
+      Return **ONLY** a valid **raw JSON object** with this exact format. Do **NOT** include any preamble, commentary, or markdown.
+      
+      {
+        "nodes": [
+          { "label": "string", "type": "emotion|theme|person|event" },
+          ...
+        ],
+        "edges": [
+          { "from": "string", "to": "string", "weight": float between -1.0 and 1.0 },
+          ...
+        ]
+      }
+      
+      Weight represents the **strength and polarity** of the relationship:
+      - Positive = supportive or motivating
+      - Negative = draining or harmful
+      
+      ⚠️ IMPORTANT:
+      - Do not add explanations or extra text.
+      - Return only the raw JSON object (no backticks, no markdown, no prose).
+      - Include at least 1 node and 1 edge if possible.
+      
+      ---
+      
+      📝 Journal Entry:
+      ${journalText}
+    `.trim()
+     .replace(/^```json/, '')
+     .replace(/^```/, '')
+     .replace(/```$/, '')
+     .trim();
 
     try {
       const response = await this.aiService.sendToAnthropicAPI(prompt);
