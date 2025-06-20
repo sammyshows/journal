@@ -18,6 +18,11 @@ export class FinishRequestDto {
   @IsOptional()
   @IsString()
   userId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  created_at?: string;
 }
 
 export class FinishResponseDto {
@@ -33,10 +38,42 @@ export class FinishResponseDto {
 
 export class JournalEntry {
   @ApiProperty()
+  journal_entry_id: string;
+
+  @ApiProperty()
+  user_id: string;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  ai_summary: string;
+
+  @ApiProperty()
+  emoji: string;
+
+  @ApiProperty()
+  user_summary: string;
+
+  @ApiProperty()
   content: string;
 
   @ApiProperty()
-  created_at: Date;
+  embedding: number[];
+
+  @ApiProperty()
+  metadata: Record<string, any>;
+
+  @ApiProperty()
+  tags: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  created_at?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  updated_at?: string;
 }
 
 export class JournalEntriesResponseDto {
@@ -59,4 +96,9 @@ export class JournalSummaries {
 
   @ApiProperty()
   aiSummary: string;
+
+  @ApiProperty()
+  @IsArray()
+  @IsString({ each: true })
+  tags: string[];
 }

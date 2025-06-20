@@ -3,7 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
 import { EntityExtractionService } from '../common/entity-extraction.service';
 import { GraphProcessorService } from '../common/graph-processor.service';
-import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto } from './journal.dto';
+import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, JournalEntry } from './journal.dto';
 
 @Injectable()
 export class JournalService {
@@ -50,7 +50,7 @@ export class JournalService {
   }
 
   async finishJournalEntry(finishRequest: FinishRequestDto): Promise<FinishResponseDto> {
-    const { journal_entry_id, chat, userId } = finishRequest;
+    const { journal_entry_id, chat, userId, created_at } = finishRequest;
   
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid chat data');
@@ -64,7 +64,7 @@ export class JournalService {
   
     // Default variables
     let embedding = null;
-    let summaries = { title: null, emoji: null, userSummary: null, aiSummary: null };
+    let summaries = { title: null, emoji: null, userSummary: null, aiSummary: null, tags: [] };
     let extraction = { nodes: [], edges: [] };
 
     // Run all AI-related work in parallel
@@ -91,7 +91,7 @@ export class JournalService {
   
     console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
     
-    const entryId = await this.databaseService.saveJournalEntry({
+    const entryId = await this.saveJournalEntry({
       journal_entry_id,
       user_id: userId || 'default-user',
       content: chatText,
@@ -100,11 +100,13 @@ export class JournalService {
       emoji: summaries.emoji,
       user_summary: summaries.userSummary,
       ai_summary: summaries.aiSummary,
+      tags: summaries.tags,
       metadata: {
         message_count: chat.length,
         created_via: 'web_app',
         model_used: 'voyage-3-large'
-      }
+      },
+      created_at
     });
   
     console.log(`Journal entry saved with ID: ${entryId}`);
@@ -126,5 +128,74 @@ export class JournalService {
       entryId,
       message: 'Journal entry successfully saved and processed.'
     };
+  }
+
+  async saveJournalEntry(entry: JournalEntry): Promise<string> {
+    const client = await this.databaseService.getClient();
+    try {
+      await client.query('BEGIN');
+  
+      const columns = [
+        "journal_entry_id",
+        "user_id",
+        "content",
+        "embedding",
+        "metadata",
+        "title",
+        "emoji",
+        "user_summary",
+        "ai_summary"
+      ];
+      const values = [
+        entry.journal_entry_id,
+        entry.user_id,
+        entry.content,
+        entry.embedding ? `[${entry.embedding.join(',')}]` : null,
+        JSON.stringify(entry.metadata || {}),
+        entry.title,
+        entry.emoji,
+        entry.user_summary,
+        entry.ai_summary
+      ];
+  
+      if (entry.created_at) {
+        columns.push("created_at");
+        values.push(entry.created_at);
+      }
+  
+      const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+  
+      const result = await client.query(
+        `INSERT INTO journal_entries (${columns.join(', ')}) VALUES (${placeholders}) RETURNING journal_entry_id`,
+        values
+      );
+  
+      const entryId = result.rows[0].journal_entry_id;
+  
+      // Insert tags if they exist
+      if (entry.tags?.length > 0) {
+        const tagValues: any[] = [];
+        const tagPlaceholders: string[] = [];
+  
+        entry.tags.forEach((tag, i) => {
+          tagValues.push(entryId, tag);
+          tagPlaceholders.push(`($${2 * i + 1}, $${2 * i + 2})`);
+        });
+  
+        await client.query(
+          `INSERT INTO journal_entry_tags (journal_entry_id, tag) VALUES ${tagPlaceholders.join(', ')}`,
+          tagValues
+        );
+      }
+  
+      await client.query('COMMIT');
+      return entryId;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Failed to save journal entry:', err);
+      throw err;
+    } finally {
+      client.release();
+    }
   }  
 }

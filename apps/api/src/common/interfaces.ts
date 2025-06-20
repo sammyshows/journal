@@ -3,21 +3,6 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface JournalEntry {
-  journal_entry_id?: string;
-  user_id: string;
-  content: string;
-  embedding?: number[];
-  metadata?: Record<string, any>;
-  title?: string;
-  emoji?: string;
-  tags?: string[];
-  user_summary?: string;
-  ai_summary?: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
 export interface Entity {
   name: string;
   display_name: string;
