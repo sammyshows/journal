@@ -1,10 +1,5 @@
 import { Platform } from 'react-native';
-
-let SQLite;
-if (Platform.OS !== 'web') {
-  SQLite = require('expo-sqlite').openDatabase;
-}
-
+import * as SQLite from 'expo-sqlite';
 
 // Database configuration
 const DB_NAME = 'journal.db';
@@ -25,24 +20,25 @@ export interface NewEntryData {
 }
 
 // Database instance
-let db: SQLite.SQLiteDatabase | null = null;
+let db: any | null = null;
 
-const dbFunctionWrapper = (func: any) => {
-  return async () => {
+// Fix the wrapper to preserve function signatures
+const dbFunctionWrapper = <T extends (...args: any[]) => any>(func: T): T => {
+  return ((...args: Parameters<T>) => {
     // Return early if we're on web
     if (Platform.OS === 'web') {
       console.warn("SQLite is not supported on web.");
-      return;
+      return Promise.resolve();
     }
 
     // Initialize the database if it's not already initialized
     if (!db) {
-      await initDB();
+      return initDB().then(() => func(...args));
     }
 
     // Call the function
-    return func();
-  };
+    return func(...args);
+  }) as T;
 };
 
 /**
@@ -63,7 +59,7 @@ export async function initDB(): Promise<void> {
         journal_entry_id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         content TEXT NOT NULL,
-        created_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
       );
     `);
 

@@ -63,7 +63,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="assistant"
+          name="explore"
           options={{
             title: 'AI Chat',
             tabBarIcon: ({ color, focused }) => (

@@ -51,7 +51,7 @@ export default function HomeScreen() {
   };
 
   const handleChatWithAI = () => {
-    router.push('/(tabs)/assistant');
+    router.push('/(tabs)/explore');
   };
 
   if (loading) {

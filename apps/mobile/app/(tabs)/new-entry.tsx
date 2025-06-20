@@ -8,11 +8,16 @@ import { FloatingToggle } from '../../components/FloatingToggle';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService } from '../../services/api';
 import { addEntry } from '../../services/journalDatabase';
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
+import { useJournalStore } from '@/stores/useJournalStore';
 
 type Mode = 'text' | 'voice' | 'mixed';
 
 export default function NewJournalEntry() {
+  const { theme } = useAppSettingsStore()
+  const { fetchEntries } = useJournalStore();
   const [mode, setMode] = useState<Mode>('text');
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -86,37 +91,48 @@ export default function NewJournalEntry() {
     }
 
     setIsSaving(true);
-    try {
-      const journal_entry_id = uuidv4();
-      saveToLocalDatabase(journal_entry_id, finalContent);
 
-      const result = await apiService.createJournalEntry(journal_entry_id, finalContent);
-      
+    const journal_entry_id = uuidv4();
+
+    saveToLocalDatabase(journal_entry_id, finalContent);
+
+    saveOnline(journal_entry_id, finalContent);
+
+    setIsSaving(false);
+  };
+
+  const saveToLocalDatabase = async (journal_entry_id: string, content: string) => {
+    try {
+      await addEntry({
+        journal_entry_id,
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        content
+      });
+
       Alert.alert(
         'Entry Saved!', 
         'Your journal entry has been saved and processed.',
         [
           {
             text: 'OK',
-            onPress: () => router.back()
+            onPress: () => router.push('/(tabs)/journal')
           }
         ]
       );
     } catch (error) {
       console.error('Error saving entry:', error);
       Alert.alert('Error', 'Failed to save your entry. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  const saveToLocalDatabase = async (content: string) => {
-    await addEntry({
-      journal_entry_id: uuidv4(),
-      userId: '123e4567-e89b-12d3-a456-426614174000',
-      content: content
-    });
-  };
+  const saveOnline = async (journal_entry_id: string, content: string) => {
+    try {
+      await apiService.createJournalEntry(journal_entry_id, content);
+      await fetchEntries();
+    } catch (error) {
+      console.error('Error saving entry:', error);
+    }
+  }
 
   const handleClose = () => {
     if (content.trim() || transcription.trim()) {
@@ -134,44 +150,42 @@ export default function NewJournalEntry() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4">
-        <TouchableOpacity onPress={handleClose} className="p-2">
-          <Ionicons name="close" size={24} color="#374151" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 }}>
+        <TouchableOpacity onPress={handleClose} style={{ padding: 8 }}>
+          <Ionicons name="close" size={24} color={theme.secondaryText} />
         </TouchableOpacity>
         
-        <Text className="text-lg font-semibold text-gray-900">New Entry</Text>
+        <Text style={{ fontSize: 16, fontWeight: 'semibold', color: theme.secondaryText }}>New Entry</Text>
         
         <TouchableOpacity
           onPress={handleSave}
           disabled={isSaving}
-          className={`px-4 py-2 rounded-full ${
-            isSaving ? 'bg-gray-300' : 'bg-primary-500'
-          }`}
+          style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: isSaving ? theme.border : theme.primary }}
         >
           {isSaving ? (
             <LoadingSpinner size="small" color="white" />
           ) : (
-            <Text className="text-white font-medium">Save</Text>
+            <Text style={{ color: theme.surface, fontSize: 16, fontWeight: 'medium' }}>Save</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* Mode Toggle */}
-      <View className="items-center py-4">
+      <View style={{ alignItems: 'center', paddingVertical: 8 }}>
         <FloatingToggle currentMode={mode} onModeChange={handleModeChange} />
       </View>
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={{ flex: 1 }}
       >
-        <ScrollView className="flex-1 px-6">
+        <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
           {/* Text Mode */}
           {(mode === 'text' || mode === 'mixed') && (
-            <View className="mb-6">
-              <Text className="text-lg font-medium text-gray-700 mb-3">
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: 'medium', color: theme.text, marginBottom: 8 }}>
                 What's on your mind?
               </Text>
               <TextInput
@@ -181,8 +195,15 @@ export default function NewJournalEntry() {
                 placeholder="Start writing your thoughts..."
                 multiline
                 textAlignVertical="top"
-                className="bg-white rounded-2xl p-4 min-h-[200px] text-base text-gray-900 border border-gray-100"
                 style={{
+                  backgroundColor: theme.surface,
+                  borderRadius: 16,
+                  padding: 16,
+                  minHeight: 200,
+                  fontSize: 16,
+                  color: theme.text,
+                  borderWidth: 1,
+                  borderColor: theme.border,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.05,
@@ -195,20 +216,20 @@ export default function NewJournalEntry() {
 
           {/* Voice Mode */}
           {(mode === 'voice' || mode === 'mixed') && (
-            <View className="mb-6">
-              <Text className="text-lg font-medium text-gray-700 mb-3">
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: 'medium', color: theme.text, marginBottom: 8 }}>
                 Voice Recording
               </Text>
               
               {/* Recording Status */}
               {isRecording && (
-                <View className="bg-red-50 rounded-2xl p-4 mb-4 border border-red-100">
-                  <View className="flex-row items-center mb-2">
-                    <View className="w-3 h-3 bg-red-500 rounded-full mr-2" />
-                    <Text className="text-red-700 font-medium">Recording...</Text>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: theme.border }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View style={{ width: 12, height: 12, backgroundColor: theme.primary, borderRadius: 16, marginRight: 8 }} />
+                    <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'medium' }}>Recording...</Text>
                   </View>
                   {isTranscribing && (
-                    <Text className="text-sm text-red-600">
+                    <Text style={{ color: theme.text, fontSize: 14 }}>
                       Live transcription in progress
                     </Text>
                   )}
@@ -217,9 +238,13 @@ export default function NewJournalEntry() {
 
               {/* Transcription Area */}
               <View 
-                className="bg-white rounded-2xl p-4 min-h-[150px] border border-gray-100 mb-6"
                 style={{
-                  shadowColor: '#000',
+                  backgroundColor: theme.surface,
+                  borderRadius: 16,
+                  padding: 16,
+                  minHeight: 150,
+                  borderWidth: 1,
+                  borderColor: theme.border,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.05,
                   shadowRadius: 4,
@@ -227,24 +252,24 @@ export default function NewJournalEntry() {
                 }}
               >
                 {transcription ? (
-                  <Text className="text-base text-gray-900">
+                  <Text style={{ color: theme.text, fontSize: 16 }}>
                     {transcription}
                   </Text>
                 ) : (
-                  <Text className="text-gray-400 italic">
+                  <Text style={{ color: theme.text, fontSize: 16, fontStyle: 'italic' }}>
                     {isRecording ? 'Listening...' : 'Press the mic button to start recording'}
                   </Text>
                 )}
               </View>
 
               {/* Voice Button */}
-              <View className="items-center">
+              <View style={{ alignItems: 'center' }}>
                 <VoiceMicButton
                   isRecording={isRecording}
                   onPress={handleVoicePress}
                   size="large"
                 />
-                <Text className="text-sm text-gray-500 mt-2">
+                <Text style={{ color: theme.text, fontSize: 14, marginTop: 8 }}>
                   {isRecording ? 'Tap to stop recording' : 'Tap to start recording'}
                 </Text>
               </View>
@@ -252,9 +277,9 @@ export default function NewJournalEntry() {
           )}
 
           {/* Tips */}
-          <View className="bg-soft-50 rounded-2xl p-4 border border-soft-100">
-            <Text className="text-soft-700 font-medium mb-2">💡 Tips for great entries:</Text>
-            <Text className="text-soft-600 leading-5">
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'medium', marginBottom: 8 }}>💡 Tips for great entries:</Text>
+            <Text style={{ color: theme.text, fontSize: 14, marginBottom: 8 }}>
               • Write about your feelings and experiences{'\n'}
               • Be honest and authentic{'\n'}
               • Include what you're grateful for{'\n'}

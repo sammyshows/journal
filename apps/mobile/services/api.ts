@@ -124,7 +124,7 @@ export const apiService = {
     }
   },
 
-  async createJournalEntry(journal_entry_id: string, content: string, userId?: string): Promise<{ success: boolean; entryId: string; message: string }> {
+  async createJournalEntry(journal_entry_id: string, content: string, userId?: string, created_at?: string): Promise<{ success: boolean; entryId: string; message: string }> {
     try {
       const chat: ChatMessage[] = [{ role: 'user', content }];
       const response = await apiClient.post<{
@@ -133,8 +133,9 @@ export const apiService = {
         message: string;
       }>('/finish', {
         journal_entry_id,
+        userId: userId || DEFAULT_USER_ID,
         chat,
-        userId: userId || DEFAULT_USER_ID
+        created_at
       });
       
       return response;
