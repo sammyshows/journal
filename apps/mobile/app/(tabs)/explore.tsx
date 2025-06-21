@@ -150,8 +150,8 @@ export default function AssistantScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>AI Chat</Text>
-          <Text style={{ fontSize: 14, color: theme.secondaryText }}>Chat & search your journal</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>Explore</Text>
+          <Text style={{ fontSize: 14, color: theme.secondaryText, fontStyle: 'italic' }}>Ask anything!</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity

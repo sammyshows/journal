@@ -65,7 +65,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="explore"
           options={{
-            title: 'AI Chat',
+            title: 'Explore',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={24} color={color} />
             ),

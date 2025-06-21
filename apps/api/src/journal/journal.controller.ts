@@ -26,7 +26,7 @@ export class JournalController {
   @Post('finish')
   @ApiOperation({ summary: 'Finish journal entry and process for graph' })
   @ApiResponse({ status: 200, description: 'Journal entry processed', type: FinishResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid chat data' })
+  @ApiResponse({ status: 400, description: 'Invalid journal entry data' })
   @ApiResponse({ status: 500, description: 'Failed to process finish request' })
   async finish(@Body() finishRequest: FinishRequestDto): Promise<FinishResponseDto> {
     try {

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsString, IsIn, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class ChatMessage {
+export class ExploreMessage {
   @ApiProperty({ enum: ['user', 'ai'] })
   @IsString()
   @IsIn(['user', 'ai'])
@@ -13,15 +13,15 @@ export class ChatMessage {
   content: string;
 }
 
-export class ChatRequestDto {
-  @ApiProperty({ type: [ChatMessage] })
+export class ExploreRequestDto {
+  @ApiProperty({ type: [ExploreMessage] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ChatMessage)
-  chat: ChatMessage[];
+  @Type(() => ExploreMessage)
+  chat: ExploreMessage[];
 }
 
-export class ChatResponseDto {
+export class ExploreResponseDto {
   @ApiProperty()
   reply: string;
 }

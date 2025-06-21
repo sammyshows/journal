@@ -1,18 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, IsOptional, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsOptional, ValidateNested, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ChatMessage } from '../chat/chat.dto';
+
+export class JournalMessage {
+  @ApiProperty({ enum: ['user', 'ai'] })
+  @IsString()
+  @IsIn(['user', 'ai'])
+  role: 'user' | 'ai';
+
+  @ApiProperty()
+  @IsString()
+  content: string;
+}
 
 export class FinishRequestDto {
   @ApiProperty({ required: true })
   @IsString()
   journal_entry_id: string
 
-  @ApiProperty({ type: [ChatMessage] })
+  @ApiProperty({ type: [JournalMessage] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ChatMessage)
-  chat: ChatMessage[];
+  @Type(() => JournalMessage)
+  chat: JournalMessage[];
 
   @ApiProperty({ required: false })
   @IsOptional()

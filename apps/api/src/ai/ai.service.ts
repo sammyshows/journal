@@ -146,6 +146,8 @@ export class AiService {
     const raw = await this.sendToAnthropicAPI(prompt);
   
     try {
+      console.log('raw ai summary json', typeof raw, raw)
+
       return JSON.parse(raw);
     } catch (err) {
       console.error("Failed to parse AI summary JSON:", raw);

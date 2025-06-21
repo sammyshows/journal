@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ChatModule } from './chat/chat.module';
+import { ExploreModule } from './explore/explore.module';
 import { JournalModule } from './journal/journal.module';
 import { GraphModule } from './graph/graph.module';
 import { SearchModule } from './search/search.module';
@@ -17,7 +17,7 @@ import { CommonModule } from './common/common.module';
     DatabaseModule,
     AiModule,
     CommonModule,
-    ChatModule,
+    ExploreModule,
     JournalModule,
     GraphModule,
     SearchModule,

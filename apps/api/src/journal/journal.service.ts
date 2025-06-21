@@ -53,7 +53,7 @@ export class JournalService {
     const { journal_entry_id, chat, userId, created_at } = finishRequest;
   
     if (!chat || !Array.isArray(chat)) {
-      throw new BadRequestException('Invalid chat data');
+      throw new BadRequestException('Invalid journal chat data');
     }
   
     console.log('Processing journal entry...');

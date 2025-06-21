@@ -46,11 +46,11 @@ export default function HomeScreen() {
     console.log('Entry pressed:', entry.journal_entry_id);
   };
 
-  const handleNewEntry = () => {
+  const goToNewEntry = () => {
     router.push('/journal/new');
   };
 
-  const handleChatWithAI = () => {
+  const goToExplore = () => {
     router.push('/(tabs)/explore');
   };
 
@@ -90,7 +90,7 @@ export default function HomeScreen() {
         {/* Action Buttons */}
         <View style={{ paddingHorizontal: 24, marginBottom: 32, gap: 16 }}>
           <TouchableOpacity
-            onPress={handleNewEntry}
+            onPress={goToNewEntry}
             style={{
               backgroundColor: theme.primary,
               borderRadius: 16,
@@ -112,7 +112,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={handleChatWithAI}
+            onPress={goToExplore}
             style={{
               backgroundColor: theme.secondary,
               borderRadius: 16,
@@ -129,7 +129,7 @@ export default function HomeScreen() {
           >
             <Ionicons name="chatbubble-ellipses-outline" size={24} color={theme.text} />
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold', marginLeft: 8 }}>
-              Talk to AI Bestie
+              Explore
             </Text>
           </TouchableOpacity>
         </View>

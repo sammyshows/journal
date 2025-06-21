@@ -16,7 +16,12 @@ export interface JournalEntry {
   ai_summary?: string;
 }
 
-export interface ChatMessage {
+export interface JournalMessage {
+  role: 'user' | 'ai';
+  content: string;
+}
+
+export interface ExploreMessage {
   role: 'user' | 'ai';
   content: string;
 }
@@ -126,7 +131,7 @@ export const apiService = {
 
   async createJournalEntry(journal_entry_id: string, content: string, userId?: string, created_at?: string): Promise<{ success: boolean; entryId: string; message: string }> {
     try {
-      const chat: ChatMessage[] = [{ role: 'user', content }];
+      const chat: JournalMessage[] = [{ role: 'user', content }];
       const response = await apiClient.post<{
         success: boolean;
         entryId: string;
@@ -196,11 +201,11 @@ export const apiService = {
     }
   },
 
-  // AI Chat endpoint
-  async sendMessageToAssistant(message: string): Promise<string> {
+  // Explore endpoint
+  async sendMessageToExplore(message: string): Promise<string> {
     try {
-      const chat: ChatMessage[] = [{ role: 'user', content: message }];
-      const response = await apiClient.post<{ reply: string }>('/chat', { chat });
+      const chat: ExploreMessage[] = [{ role: 'user', content: message }];
+      const response = await apiClient.post<{ reply: string }>('/explore', { chat });
       return response.reply;
     } catch (error) {
       console.error('Error sending message to assistant:', error);

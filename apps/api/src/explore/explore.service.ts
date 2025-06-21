@@ -1,17 +1,17 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { AiService } from '../ai/ai.service';
 import { getJournalAIRolePrompt } from '../common/prompts';
-import { ChatMessage } from './chat.dto';
+import { ExploreMessage } from './explore.dto';
 
 @Injectable()
-export class ChatService {
+export class ExploreService {
   constructor(
     private readonly aiService: AiService,
   ) {}
 
-  async processChat(chat: ChatMessage[]): Promise<string> {
+  async processExploreMessage(chat: ExploreMessage[]): Promise<string> {
     if (!chat || !Array.isArray(chat)) {
-      throw new BadRequestException('Invalid chat data');
+      throw new BadRequestException('Invalid explore message data');
     }
 
     const rolePrompt = getJournalAIRolePrompt();
