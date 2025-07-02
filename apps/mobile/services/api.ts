@@ -26,6 +26,20 @@ export interface ExploreMessage {
   content: string;
 }
 
+export interface JournalEntryCard {
+  id: string;
+  emoji: string;
+  title: string;
+  summary: string;
+  date: string;
+}
+
+export interface ExploreResponse {
+  type: 'fallback' | 'insight';
+  reply: string;
+  entries?: JournalEntryCard[];
+}
+
 export interface SearchResult {
   journal_entry_id: string;
   content: string;
@@ -56,6 +70,7 @@ class ApiClient {
 
   constructor() {
     this.baseUrl = API_URL;
+    console.log('API_URL', this.baseUrl);
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -202,10 +217,21 @@ export const apiService = {
   },
 
   // Explore endpoint
-  async sendMessageToExplore(message: string): Promise<string> {
+  async sendMessageToExplore(chat: ExploreMessage[]): Promise<ExploreResponse> {
+    try {
+      const response = await apiClient.post<ExploreResponse>('/explore', { chat });
+      return response;
+    } catch (error) {
+      console.error('Error sending message to assistant:', error);
+      throw new Error('Failed to get AI response');
+    }
+  },
+
+  // Legacy method for compatibility
+  async sendMessageToAssistant(message: string): Promise<string> {
     try {
       const chat: ExploreMessage[] = [{ role: 'user', content: message }];
-      const response = await apiClient.post<{ reply: string }>('/explore', { chat });
+      const response = await this.sendMessageToExplore(chat);
       return response.reply;
     } catch (error) {
       console.error('Error sending message to assistant:', error);

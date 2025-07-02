@@ -32,7 +32,7 @@ const TabBarAddButton = () => {
       onPress={handlePress}
       style={{
         position: 'absolute',
-        bottom: 10,
+        bottom: 0,
         alignSelf: 'center',
         zIndex: 10,
       }}
@@ -43,7 +43,7 @@ const TabBarAddButton = () => {
             backgroundColor: '#035afc',
             width: 64,
             height: 64,
-            borderRadius: 24,
+            borderRadius: 32,
             alignItems: 'center',
             justifyContent: 'center',
             shadowColor: '#000',

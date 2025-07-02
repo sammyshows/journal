@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { apiService, SearchResponse } from '../../services/api';
+import { apiService, ExploreResponse, ExploreMessage, JournalEntryCard } from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 
 interface Message {
@@ -11,6 +11,8 @@ interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  type?: 'fallback' | 'insight';
+  entries?: JournalEntryCard[];
 }
 
 export default function AssistantScreen() {
@@ -19,26 +21,24 @@ export default function AssistantScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showStarterPrompts, setShowStarterPrompts] = useState(true);
-  const [showSearchModal, setShowSearchModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<SearchResponse | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [currentThinkingMessage, setCurrentThinkingMessage] = useState('');
+  const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const starterPrompts = [
-    "How can I be more consistent with journaling?",
-    "What patterns do you notice in my entries?",
-    "Help me reflect on my recent experiences",
-    "What should I write about today?",
-    "How can I better understand my emotions?"
+  const thinkingMessages = [
+    "Looking through your journal…",
+    "Finding the moments that matter most…",
+    "Reading what you've shared before…",
+    "Connecting your experiences…",
+    "Gathering your thoughts…"
   ];
 
-  const searchSuggestions = [
-    "When did I feel most confident?",
-    "What are my thoughts about work?",
-    "How do I handle stress?",
-    "When was I happiest recently?",
-    "What makes me feel grateful?"
+  const starterPrompts = [
+    "What patterns do you notice in my mood lately?",
+    "Help me understand my relationship with work",
+    "What am I avoiding in my life right now?"
   ];
 
   useEffect(() => {
@@ -47,10 +47,42 @@ export default function AssistantScreen() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      setCurrentThinkingMessage(thinkingMessages[0]);
+      setThinkingMessageIndex(0);
+      
+      interval = setInterval(() => {
+        setThinkingMessageIndex(prev => {
+          const nextIndex = (prev + 1) % thinkingMessages.length;
+          setCurrentThinkingMessage(thinkingMessages[nextIndex]);
+          return nextIndex;
+        });
+      }, 2500);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isLoading]);
+
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+  };
+
+  const animateCardIn = () => {
+    slideAnim.setValue(50);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
   };
 
   const sendMessage = async (content: string) => {
@@ -69,16 +101,31 @@ export default function AssistantScreen() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.sendMessageToAssistant(content);
+      // Build chat history for context
+      const chatHistory: ExploreMessage[] = [
+        ...messages.map(msg => ({
+          role: msg.role === 'assistant' ? 'ai' as const : msg.role,
+          content: msg.content
+        })),
+        { role: 'user', content }
+      ];
+
+      const response = await apiService.sendMessageToExplore(chatHistory);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: response.reply,
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        type: response.type,
+        entries: response.entries
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      if (response.entries?.length) {
+        animateCardIn();
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert('Error', 'Failed to send message. Please try again.');
@@ -123,131 +170,206 @@ export default function AssistantScreen() {
     }
   };
 
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
-
-    setIsSearching(true);
-    setSearchResult(null);
-
-    try {
-      const result = await apiService.searchEntries(query.trim());
-      setSearchResult(result);
-    } catch (error) {
-      console.error('Search error:', error);
-      Alert.alert('Error', 'Failed to search entries. Please try again.');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSearchSuggestion = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    handleSearch(suggestion);
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>Explore</Text>
-          <Text style={{ fontSize: 14, color: theme.secondaryText, fontStyle: 'italic' }}>Ask anything!</Text>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+      {messages.length && (
+        <View className="flex-row justify-between items-center px-4 py-4 border-b" style={{ borderColor: theme.border }}>
           <TouchableOpacity
-            onPress={() => setShowSearchModal(true)}
-            style={{ padding: 8, backgroundColor: theme.primary, borderRadius: 100 }}
+            onPress={() => router.push('/(tabs)/journal')}
+            className="p-2 rounded-full bg-surface shadow-sm"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2
+            }}
           >
-            <Ionicons name="search" size={20} color={theme.surface} />
+            <Ionicons name="arrow-back" size={20} color={theme.secondaryText} />
           </TouchableOpacity>
+          <View className="flex-1 items-center">
+            <Text style={{ fontSize: 24, fontWeight: '200', color: theme.text }}>Explore</Text>
+          </View>
           <TouchableOpacity
             onPress={clearChat}
-            style={{ padding: 8, backgroundColor: theme.surface, borderRadius: 100 }}
-          >
-            <Ionicons name="refresh" size={20} color={theme.text} />
+            className="p-2 rounded-full bg-surface shadow-sm" 
+            style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 }}
+            >
+            <Ionicons name="refresh" size={20} color={theme.secondaryText} />
           </TouchableOpacity>
         </View>
-      </View>
+      )}
 
       {/* Chat Messages */}
       <ScrollView
         ref={scrollViewRef}
-        style={{ flex: 1, paddingHorizontal: 16 }}
+        className="flex-1 px-4 pt-6"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
       >
         {/* Welcome Message */}
         {messages.length === 0 && (
-          <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ fontSize: 48, marginBottom: 16 }}>🤖</Text>
-            <Text style={{ fontSize: 20, fontWeight: 'semibold', color: theme.text, marginBottom: 8 }}>
-              Hey there! 👋
-            </Text>
-            <Text style={{ fontSize: 14, color: theme.secondaryText, textAlign: 'center', lineHeight: 20 }}>
-              I'm your AI journaling companion. I'm here to help you reflect, explore your thoughts, and discover insights from your entries.
+          <View style={{ flex: 1 }} className="pt-16 px-4 items-center justify-start">
+            <Text className="font-medium text-4xl mb-2" style={{ color: theme.text }}>
+              Ask <Text style={{ color: theme.primary }}>anything</Text>, what would you like to explore?
             </Text>
           </View>
         )}
 
         {/* Messages */}
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={{ marginBottom: 16, alignItems: message.role === 'user' ? 'flex-end' : 'flex-start' }}
-          >
-            <View
-              style={{ maxWidth: '80%', padding: 16, borderRadius: 16, backgroundColor: message.role === 'user' ? theme.primary : theme.surface, borderWidth: 1, borderColor: theme.border }}
-              style={
-                message.role === 'assistant'
-                  ? {
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 2,
-                      elevation: 1,
-                    }
-                  : {}
-              }
-            >
-              <Text
-                style={{ fontSize: 16, lineHeight: 24, color: message.role === 'user' ? theme.surface : theme.text }}
-              >
-                {message.content}
-              </Text>
-              <Text
-                style={{ fontSize: 12, marginTop: 4, color: message.role === 'user' ? theme.primary : theme.secondaryText }}
-              >
-                {message.timestamp.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </Text>
-            </View>
+        {messages.map((message, index) => (
+          <View key={message.id} className="pb-6">
+            {message.role === 'user' ? (
+              <View className="items-end">
+                <View 
+                  className="max-w-[85%] px-4 py-3 rounded-2xl"
+                  style={{ 
+                    backgroundColor: theme.primary,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2
+                  }}
+                >
+                  <Text className="text-sm leading-5" style={{ color: theme.surface }}>
+                    {message.content}
+                  </Text>
+                  <Text className="text-xs mt-1 opacity-80" style={{ color: theme.surface }}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View className="items-start">             
+                <View 
+                  className="max-w-[85%] px-4 py-3 rounded-2xl"
+                  style={{ 
+                    backgroundColor: theme.surface,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: theme.name === 'dark' ? 0.3 : 0.08,
+                    shadowRadius: 8,
+                    elevation: 4,
+                    borderWidth: theme.name === 'dark' ? 1 : 0,
+                    borderColor: theme.border
+                  }}
+                >
+                  <Text className="text-sm leading-5" style={{ color: theme.text }}>
+                    {message.content}
+                  </Text>
+                  <Text className="text-xs mt-2" style={{ color: theme.secondaryText }}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+
+                {message.entries?.length && (
+                  <Text className="text-sm my-3 px-1" style={{ color: theme.secondaryText }}>
+                    These journal entries are related to what you're feeling.
+                  </Text>
+                )}
+
+                {/* Journal Entry Cards */}
+                {message.entries?.length && (
+                  <Animated.View 
+                    className="w-full"
+                    style={{ transform: [{ translateY: slideAnim }] }}
+                  >
+                    <ScrollView 
+                      horizontal 
+                      showsHorizontalScrollIndicator={false}
+                      className="pl-1"
+                      contentContainerStyle={{ paddingRight: 16 }}
+                    >
+                      {message.entries.map((entry, cardIndex) => (
+                        <TouchableOpacity
+                          key={entry.id}
+                          className="mr-3 p-4 rounded-2xl"
+                          style={{
+                            backgroundColor: theme.surface,
+                            width: 280,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: theme.name === 'dark' ? 0.4 : 0.12,
+                            shadowRadius: 12,
+                            elevation: 6,
+                            borderWidth: theme.name === 'dark' ? 1 : 0,
+                            borderColor: theme.border
+                          }}
+                          onPress={() => {
+                            // TODO: Navigate to full journal entry
+                            Alert.alert('Journal Entry', `Would open entry: ${entry.title}`);
+                          }}
+                        >
+                          <View className="flex-row items-center mb-2">
+                            <Text className="text-2xl mr-2">{entry.emoji}</Text>
+                            <Text className="flex-1 text-base font-semibold" style={{ color: theme.text }}>
+                              {entry.title}
+                            </Text>
+                          </View>
+                          <Text className="text-sm leading-5 mb-3" style={{ color: theme.secondaryText }}>
+                            {entry.summary}
+                          </Text>
+                          <Text className="text-xs" style={{ color: theme.muted }}>
+                            {entry.date}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </Animated.View>
+                )}
+              </View>
+            )}
           </View>
         ))}
 
-        {/* Loading Indicator */}
+        {/* Thinking Messages */}
         {isLoading && (
-          <View style={{ alignItems: 'flex-start', marginBottom: 16 }}>
-            <View style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}>
-              <LoadingSpinner size="small" />
-            </View>
+          <View className="items-start mb-6">
+            <Animated.View 
+              className="px-4 py-3 rounded-2xl flex-row items-center"
+              style={{ 
+                backgroundColor: theme.surface,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: theme.name === 'dark' ? 0.3 : 0.08,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: theme.name === 'dark' ? 1 : 0,
+                borderColor: theme.border,
+                opacity: fadeAnim
+              }}
+            >
+              <LoadingSpinner size="small" color={theme.primary} />
+              <Text className="ml-3 text-sm" style={{ color: theme.secondaryText }}>
+                {currentThinkingMessage}
+              </Text>
+            </Animated.View>
           </View>
         )}
 
         {/* Starter Prompts */}
         {showStarterPrompts && messages.length === 0 && (
-          <View style={{ paddingVertical: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
-              Try asking me about:
-            </Text>
-            <View className="space-y-3">
+          <View className="pt-10 px-4">
+            <View className="space-y-6">
               {starterPrompts.map((prompt, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => handleStarterPrompt(prompt)}
-                  style={{ padding: 10, margin: 2, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
+                  className="py-2 px-4 rounded-2xl"
+                  style={{
+                    backgroundColor: theme.emotionTag,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 6,
+                    elevation: 3,
+                    marginBottom: 8
+                  }}
                 >
-                  <Text style={{ color: theme.text }}>{prompt}</Text>
+                  <Text className="text-sm leading-6" style={{ color: theme.text }}>
+                    {prompt}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -255,40 +377,71 @@ export default function AssistantScreen() {
         )}
 
         {/* Regenerate Button */}
-        {messages.length > 0 && !isLoading && (
-          <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+        {/* {messages.length > 0 && !isLoading && (
+          <View className="items-center pt-4 pb-6">
             <TouchableOpacity
               onPress={regenerateLastResponse}
-              style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.surface, borderRadius: 100 }}
+              className="flex-row items-center px-6 py-3 rounded-full"
+              style={{
+                backgroundColor: theme.surface,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: theme.name === 'dark' ? 0.2 : 0.05,
+                shadowRadius: 6,
+                elevation: 3,
+                borderWidth: theme.name === 'dark' ? 1 : 0,
+                borderColor: theme.border
+              }}
             >
-              <Ionicons name="refresh" size={16} color="#6b7280" />
-              <Text style={{ fontSize: 16, color: theme.secondaryText, marginLeft: 8, fontWeight: 'medium' }}>Regenerate</Text>
+              <Ionicons name="refresh" size={16} color={theme.secondaryText} />
+              <Text className="text-sm font-medium ml-2" style={{ color: theme.secondaryText }}>
+                Try again
+              </Text>
             </TouchableOpacity>
           </View>
-        )}
+        )} */}
       </ScrollView>
 
       {/* Input Area */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ paddingHorizontal: 16, paddingVertical: 16, backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.border }}
+        className="px-4 pb-4 mb-6"
       >
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
-          <View style={{ flex: 1 }}>
+        <View className="flex-row items-center">
+          <View className="flex-1 mr-3">
             <TextInput
               value={inputText}
               onChangeText={setInputText}
-              placeholder="Ask me anything about your journaling..."
+              placeholder="What's on your mind?"
+              placeholderTextColor={theme.muted}
               multiline
               maxLength={500}
-              style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, textAlignVertical: 'top' }}
-              style={{ textAlignVertical: 'top' }}
+              className="p-4 rounded-2xl text-base placeholder:text-gray-400"
+              style={{
+                color: theme.text,
+                textAlignVertical: 'top',
+                minHeight: 48,
+                maxHeight: 120,
+                shadowRadius: 4,
+                elevation: 2,
+                borderWidth: 2,
+                borderColor: theme.border
+              }}
+              editable={!isLoading}
             />
           </View>
           <TouchableOpacity
             onPress={handleSend}
             disabled={!inputText.trim() || isLoading}
-            style={{ padding: 16, borderRadius: 100, backgroundColor: inputText.trim() && !isLoading ? theme.primary : theme.surface }}
+            className="w-12 h-12 rounded-full items-center justify-center"
+            style={{
+              backgroundColor: inputText.trim() && !isLoading ? theme.primary : theme.border,
+              shadowColor: inputText.trim() && !isLoading ? theme.primary : '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: inputText.trim() && !isLoading ? 0.3 : 0.1,
+              shadowRadius: 4,
+              elevation: 3
+            }}
           >
             <Ionicons
               name="send"
@@ -298,160 +451,6 @@ export default function AssistantScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-
-      {/* Search Modal */}
-      <Modal
-        visible={showSearchModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-          {/* Search Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: theme.surface, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-            <TouchableOpacity onPress={() => setShowSearchModal(false)}>
-              <Ionicons name="close" size={24} color={theme.text} />
-            </TouchableOpacity>
-            <Text style={{ fontSize: 18, fontWeight: 'semibold', color: theme.text }}>Search Memories</Text>
-            <View style={{ width: 24 }} />
-          </View>
-
-          <ScrollView style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 16 }}>
-            {/* Search Input */}
-            <View style={{ marginBottom: 16 }}>
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Ask about your past experiences..."
-                style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, textAlignVertical: 'top' }}
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                  elevation: 1,
-                }}
-                multiline
-                maxLength={200}
-              />
-              <TouchableOpacity
-                onPress={() => handleSearch(searchQuery)}
-                disabled={!searchQuery.trim() || isSearching}
-                style={{ marginTop: 12, padding: 16, borderRadius: 100, backgroundColor: searchQuery.trim() && !isSearching ? theme.primary : theme.surface }}
-              >
-                {isSearching ? (
-                  <LoadingSpinner size="small" color="white" />
-                ) : (
-                  <Text
-                    style={{ fontSize: 16, color: searchQuery.trim() ? theme.surface : theme.secondaryText, textAlign: 'center', fontWeight: 'medium' }}
-                  >
-                    Search Memories
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Suggestions */}
-            {!searchResult && !isSearching && (
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
-                  Try asking about:
-                </Text>
-                <View style={{ gap: 12 }}>
-                  {searchSuggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => handleSearchSuggestion(suggestion)}
-                      style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
-                      style={{
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 2,
-                        elevation: 1,
-                      }}
-                    >
-                      <Text style={{ fontSize: 16, color: theme.text }}>{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Search Results */}
-            {searchResult && (
-              <View style={{ gap: 16 }}>
-                {/* AI Response */}
-                <View style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    <Ionicons name="bulb" size={20} color="#3b82f6" />
-                    <Text style={{ fontSize: 16, color: theme.text, marginLeft: 8, fontWeight: 'medium' }}>AI Insights</Text>
-                  </View>
-                  <Text style={{ fontSize: 16, color: theme.text, lineHeight: 24 }}>
-                    {searchResult.response}
-                  </Text>
-                </View>
-
-                {/* Related Entries */}
-                {searchResult.related_entries && searchResult.related_entries.length > 0 && (
-                  <View>
-                    <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 16 }}>
-                      Related Memories ({searchResult.related_entries.length})
-                    </Text>
-                    <View style={{ gap: 16 }}>
-                      {searchResult.related_entries.map((entry, index) => (
-                        <View
-                          key={entry.journal_entry_id}
-                          style={{ padding: 16, borderRadius: 16, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }}
-                          style={{
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 1 },
-                            shadowOpacity: 0.05,
-                            shadowRadius: 2,
-                            elevation: 1,
-                          }}
-                        >
-                          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: theme.secondaryText }}>
-                              {new Date(entry.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </Text>
-                            <View style={{ padding: 4, borderRadius: 100, backgroundColor: theme.surface }}>
-                              <Text style={{ fontSize: 12, color: theme.text, fontWeight: 'medium' }}>
-                                {Math.round(entry.similarity_score * 100)}% match
-                              </Text>
-                            </View>
-                          </View>
-                          <Text style={{ fontSize: 16, color: theme.text, lineHeight: 24 }}>
-                            {entry.content.length > 200 
-                              ? entry.content.substring(0, 200) + '...'
-                              : entry.content
-                            }
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {searchResult.related_entries && searchResult.related_entries.length === 0 && (
-                  <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                    <Text style={{ fontSize: 48, marginBottom: 16 }}>🔍</Text>
-                    <Text style={{ fontSize: 18, fontWeight: 'medium', color: theme.secondaryText, marginBottom: 8 }}>
-                      No Related Memories Found
-                    </Text>
-                    <Text style={{ fontSize: 14, color: theme.secondaryText, textAlign: 'center' }}>
-                      Try searching for different emotions, events, or time periods.
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 }

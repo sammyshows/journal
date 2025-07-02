@@ -37,3 +37,11 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# CocoaPods
+Pods/
+ios/Podfile.lock
+ios/build/
+
+# Xcode
+ios/*.xcworkspace
