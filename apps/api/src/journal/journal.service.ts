@@ -1,17 +1,17 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
-import { EntityExtractionService } from '../common/entity-extraction.service';
-import { GraphProcessorService } from '../common/graph-processor.service';
+import { GraphProcessorService } from '../graph/processor.service';
 import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, JournalEntry } from './journal.dto';
+import { GraphService } from 'src/graph/graph.service';
 
 @Injectable()
 export class JournalService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly aiService: AiService,
-    private readonly entityExtractionService: EntityExtractionService,
     private readonly graphProcessorService: GraphProcessorService,
+    private readonly graphService: GraphService,
   ) {}
 
   async getJournalEntries(): Promise<JournalEntriesResponseDto> {
@@ -71,7 +71,7 @@ export class JournalService {
     const [embeddingResult, summaryResult, graphResult] = await Promise.allSettled([
       this.aiService.getEmbeddings(chatText),
       this.aiService.summarizeJournalEntry(chatText),
-      this.entityExtractionService.extractNodesAndEdges(chatText)
+      this.graphService.extractEntitiesAndRelationships(chatText)
     ]);
     
     if (embeddingResult.status === 'fulfilled')
@@ -113,7 +113,7 @@ export class JournalService {
   
     // Process graph data (non-blocking, logs errors only)
     try {
-      await this.graphProcessorService.processJournalEntryForGraph(
+      await this.graphProcessorService.processJournalEntryExtraction(
         userId || 'default-user',
         entryId,
         extraction

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import { JournalSummaries } from '../journal/journal.dto';
+import { parseAIResponseObject } from '../utils/ai-response.utils';
+import { getSummarizeJournalEntryPrompt } from '../common/prompts';
 
 @Injectable()
 export class AiService {
@@ -19,9 +21,15 @@ export class AiService {
     });
   }
 
-  async sendToAnthropicAPI(prompt: string): Promise<string> {
+  async sendToAnthropicAPI(prompt: string, modelName: string): Promise<string> {
+    // See models: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-names
+    let model = "claude-3-5-haiku-20241022";
+    if (modelName === 'sonnet') {
+      model = "claude-sonnet-4-20250514";
+    } 
+
     const response = await this.anthropic.messages.create({
-      model: "claude-3-haiku-20240307",
+      model,
       max_tokens: 512,
       messages: [
         {
@@ -42,10 +50,6 @@ export class AiService {
     }
     
     return typeof response.content === "string" ? response.content : "";
-  }
-
-  async sendMessage(prompt: string): Promise<string> {
-    return this.sendToAnthropicAPI(prompt);
   }
 
   createClient(): Anthropic {
@@ -86,69 +90,12 @@ export class AiService {
   }
 
   async summarizeJournalEntry(text: string): Promise<JournalSummaries> {
-    const prompt = `
-      You are a journaling assistant. Analyze the user's journal entry and return a structured JSON object with the following fields:
-
-      1. **title** – A short 1–3 word title summarizing the core theme.
-      2. **emoji** – A single emoji that captures the tone or emotion of the entry.
-      3. **userSummary** – A 1–2 sentence recap suitable for the user to review later.
-      4. **aiSummary** – A private AI-only summary capturing deeper emotional patterns, recurring themes, or meaningful insights. This will be used to build a long-term user profile.
-      5. **tags** – An array of 3 concise keywords (e.g. "Burnout", "Family", "Motivation") that capture emotional themes, topics, or recurring ideas in the entry.
-
-      🧪 Output format:
-      Return ONLY the raw JSON object below — no markdown, no backticks:
-      {
-        "title": "string (1–3 words)",
-        "emoji": "string (1 emoji)",
-        "userSummary": "string (1–2 sentences)",
-        "aiSummary": "string (concise, insightful)",
-        "tags": ["Tag1", "Tag2", "Tag3"]
-      }
-
-      📘 Examples:
-
-      ### Example 1:
-      Journal Entry:
-      > I’m feeling overwhelmed lately. Work is piling up and I can’t seem to find the motivation to tackle it. I know I’ve had these cycles before, but this one feels heavier. I just want a break but I feel guilty even thinking about rest.
-
-      Output:
-      {
-        "title": "Burnout Spiral",
-        "emoji": "🔥",
-        "userSummary": "Feeling overwhelmed by work and struggling to find motivation.",
-        "aiSummary": "Recurring burnout theme tied to guilt around rest and self-worth. Shows patterns of high internal pressure.",
-        "tags": ["Burnout", "Work", "Guilt"]
-      }
-
-      ### Example 2:
-      Journal Entry:
-      > Caught up with Mum today and it brought back a wave of childhood memories. We cooked together like we used to. I feel more grounded after days of feeling lost.
-
-      Output:
-      {
-        "title": "Chatting with Mum",
-        "emoji": "👩‍👧",
-        "userSummary": "Reflected on a meaningful time with Mum that helped ease recent emotional uncertainty.",
-        "aiSummary": "Reconnection with a core relationship provided emotional grounding. Indicates strong nostalgic triggers tied to family rituals.",
-        "tags": ["Family", "Nostalgia", "Connection"]
-      }
-
-      Now analyze the following entry and generate your output in the same format. Return only the JSON object.
-
-      ### User Journal Entry:
-      ${text}
-    `.trim()
-     .replace(/^```json/, '')
-     .replace(/^```/, '')
-     .replace(/```$/, '')
-     .trim();
+    const prompt = getSummarizeJournalEntryPrompt(text)
   
-    const raw = await this.sendToAnthropicAPI(prompt);
+    const raw = await this.sendToAnthropicAPI(prompt, 'sonnet');
   
     try {
-      console.log('raw ai summary json', typeof raw, raw)
-
-      return JSON.parse(raw);
+      return parseAIResponseObject(raw);
     } catch (err) {
       console.error("Failed to parse AI summary JSON:", raw);
       throw new Error("AI summary response could not be parsed");

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, IsIn, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsIn, ValidateNested, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ExploreMessage {
@@ -21,7 +21,52 @@ export class ExploreRequestDto {
   chat: ExploreMessage[];
 }
 
-export class ExploreResponseDto {
+export class JournalEntryCard {
   @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  emoji: string;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  summary: string;
+
+  @ApiProperty()
+  date: string;
+}
+
+export class ExploreResponseDto {
+  @ApiProperty({ enum: ['followup', 'insight'] })
+  @IsString()
+  @IsIn(['followup', 'insight'])
+  type: 'followup' | 'insight';
+
+  @ApiProperty()
+  @IsString()
   reply: string;
+
+  @ApiProperty({ type: [JournalEntryCard], required: false })
+  @IsOptional()
+  entries?: JournalEntryCard[];
+}
+
+export class PreprocessedPromptResult {
+  @ApiProperty()
+  @IsNumber()
+  clarity: number;
+
+  @ApiProperty()
+  @IsNumber()
+  explorability: number;
+
+  @ApiProperty()
+  @IsString()
+  improvedPrompt: string | null;
+
+  @ApiProperty()
+  @IsString()
+  userReply: string | null;
 }

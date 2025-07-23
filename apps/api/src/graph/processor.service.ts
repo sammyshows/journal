@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { GraphNode, GraphEdge, GraphExtractionResult } from './interfaces';
+import { GraphNode, GraphExtractionResult } from './graph.dto';
 
 @Injectable()
 export class GraphProcessorService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async processJournalEntryForGraph(
+  async processJournalEntryExtraction(
     userId: string, 
     entryId: string, 
     extraction: GraphExtractionResult

@@ -1,35 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import { AiService } from '../ai/ai.service';
 import { DatabaseService } from '../database/database.service';
-import { EntityExtractionService } from '../common/entity-extraction.service';
-import { GraphProcessorService } from '../common/graph-processor.service';
+import { GraphProcessorService } from './processor.service';
 import { 
-  GraphNode, 
-  GraphEdge, 
   GraphExtractionResult,
   NodesResponseDto,
   EdgesResponseDto,
   SoulMapResponseDto,
   TopNodesResponseDto
 } from './graph.dto';
+import { getEntitiesAndRelationshipsPrompt } from '../common/prompts/entity-extraction';
 
 @Injectable()
 export class GraphService {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly entityExtractionService: EntityExtractionService,
+    private readonly aiService: AiService,
     private readonly graphProcessorService: GraphProcessorService,
   ) {}
 
-  async extractNodesAndEdges(journalText: string): Promise<GraphExtractionResult> {
-    return this.entityExtractionService.extractNodesAndEdges(journalText);
-  }
+  async extractEntitiesAndRelationships(journalText: string): Promise<GraphExtractionResult> {
+    const prompt = getEntitiesAndRelationshipsPrompt(journalText);
 
-  async processJournalEntryForGraph(
-    userId: string, 
-    entryId: string, 
-    extraction: GraphExtractionResult
-  ): Promise<void> {
-    return this.graphProcessorService.processJournalEntryForGraph(userId, entryId, extraction);
+    try {
+      const response = await this.aiService.sendToAnthropicAPI(prompt, 'haiku');
+      return JSON.parse(response);
+    } catch (error) {
+      console.error('Graph extraction failed:', error);
+      return { nodes: [], edges: [] };
+    }
   }
 
   async getNodes(limit: number, offset: number): Promise<NodesResponseDto> {
