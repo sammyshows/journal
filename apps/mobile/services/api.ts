@@ -1,4 +1,5 @@
-import { API_URL } from '@env';
+// Use EXPO_PUBLIC_ environment variables (no need for @env import)
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:9999';
 
 export interface JournalEntry {
   journal_entry_id?: string;
@@ -169,7 +170,7 @@ export const apiService = {
   async getUserStats(userId?: string): Promise<UserStats> {
     try {
       // Get all entries for the user to compute stats
-      const entries = await this.getJournalEntries(1000, 0, userId || DEFAULT_USER_ID);
+      const entries = await this.getJournalEntries();
       
       // Calculate streak
       const sortedEntries = entries.sort((a, b) => 
