@@ -1,19 +1,21 @@
 import { Controller, Get, Post, Body, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JournalService } from './journal.service';
-import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto } from './journal.dto';
+import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, GetJournalEntriesRequestDto } from './journal.dto';
+import { IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 @ApiTags('journal')
 @Controller()
 export class JournalController {
   constructor(private readonly journalService: JournalService) {}
 
-  @Get('journal-entries')
-  @ApiOperation({ summary: 'Get journal entries' })
+  @Post('journal-entries')
+  @ApiOperation({ summary: 'Get journal entries for a user' })
   @ApiResponse({ status: 200, description: 'Journal entries returned', type: JournalEntriesResponseDto })
-  async getJournalEntries(): Promise<JournalEntriesResponseDto> {
+  async getJournalEntries(@Body() body: GetJournalEntriesRequestDto): Promise<JournalEntriesResponseDto> {
     try {
-      return await this.journalService.getJournalEntries();
+      return await this.journalService.getJournalEntries(body.userId);
     } catch (error) {
       console.error('Journal entries query error:', error);
       throw new HttpException(

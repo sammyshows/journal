@@ -112,3 +112,9 @@ export class JournalSummaries {
   @IsString({ each: true })
   tags: string[];
 }
+
+export class GetJournalEntriesRequestDto {
+  @ApiProperty({ description: 'User ID to fetch journal entries for' })
+  @IsString()
+  userId: string;
+}

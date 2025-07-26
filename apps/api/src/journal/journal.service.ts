@@ -14,7 +14,7 @@ export class JournalService {
     private readonly graphService: GraphService,
   ) {}
 
-  async getJournalEntries(): Promise<JournalEntriesResponseDto> {
+  async getJournalEntries(userId: string): Promise<JournalEntriesResponseDto> {
     const client = await this.databaseService.getClient();
     
     try {
@@ -36,7 +36,7 @@ export class JournalService {
         LIMIT 50
       `;
 
-      const params: any[] = ['123e4567-e89b-12d3-a456-426614174000'];
+      const params: any[] = [userId];
 
       const result = await client.query(query, params);
 
