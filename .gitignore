@@ -37,3 +37,6 @@ yarn-error.log*
 .DS_Store
 *.pem
 ai-context.md
+
+# PostgresDB
+db/scripts/reset-db-railway.sh
