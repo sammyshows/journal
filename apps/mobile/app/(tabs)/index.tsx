@@ -8,9 +8,11 @@ import { EntryCard } from '../../components/EntryCard';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, JournalEntry, UserStats } from '../../services/api';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
+import { useUserStore } from '../../stores/useUserStore';
 
 export default function HomeScreen() {
   const {theme} = useAppSettingsStore();
+  const { currentUser, loadUserFromStorage } = useUserStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [recentEntries, setRecentEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +21,8 @@ export default function HomeScreen() {
   const loadData = async () => {
     try {
       const [statsData, entriesData] = await Promise.all([
-        apiService.getUserStats(),
-        apiService.getJournalEntries()
+        apiService.getUserStats(currentUser.id),
+        apiService.getJournalEntries(currentUser.id)
       ]);
       setStats(statsData);
       setRecentEntries(entriesData.slice(0, 4)); // Show recent 4 entries
@@ -33,8 +35,14 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    loadData();
+    loadUserFromStorage();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser.id]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -47,7 +55,7 @@ export default function HomeScreen() {
   };
 
   const goToNewEntry = () => {
-    router.push('/journal/new');
+    router.push('/(tabs)/new-entry');
   };
 
   const goToExplore = () => {

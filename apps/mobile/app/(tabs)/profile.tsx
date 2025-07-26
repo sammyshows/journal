@@ -6,26 +6,46 @@ import { StreakCounter } from '../../components/StreakCounter';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, UserStats } from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
+import { useUserStore, User } from '../../stores/useUserStore';
+import { useJournalStore } from '../../stores/useJournalStore';
 
 export default function ProfileScreen() {
   const { theme, themeMode, setThemeMode } = useAppSettingsStore();
+  const { currentUser, users, setCurrentUser, loadUserFromStorage } = useUserStore();
+  const { fetchEntries } = useJournalStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [reminderTime, setReminderTime] = useState('8:00 PM');
 
   useEffect(() => {
+    loadUserFromStorage();
     loadUserStats();
   }, []);
 
+  useEffect(() => {
+    // Reload stats when user changes
+    if (currentUser) {
+      loadUserStats();
+    }
+  }, [currentUser.id]);
+
   const loadUserStats = async () => {
     try {
-      const data = await apiService.getUserStats();
+      const data = await apiService.getUserStats(currentUser.id);
       setStats(data);
     } catch (error) {
       console.error('Error loading user stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUserSelect = async (user: User) => {
+    if (user.id !== currentUser.id) {
+      await setCurrentUser(user);
+      // Refetch journal entries for the new user
+      await fetchEntries(user.id);
     }
   };
 
@@ -92,6 +112,52 @@ export default function ProfileScreen() {
           <Text style={{ color: theme.secondaryText, fontSize: 16 }}>Manage your journaling experience</Text>
         </View>
 
+        {/* User Selection Section */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold', marginBottom: 16 }}>
+              Users
+            </Text>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+              {users.map((user) => (
+                <TouchableOpacity
+                  key={user.id}
+                  onPress={() => handleUserSelect(user)}
+                  style={{ alignItems: 'center' }}
+                >
+                  <View
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 30,
+                      backgroundColor: user.color,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 8,
+                      borderWidth: currentUser.id === user.id ? 3 : 0,
+                      borderColor: currentUser.id === user.id ? theme.text : 'transparent',
+                    }}
+                  >
+                    <Ionicons 
+                      name="person" 
+                      size={24} 
+                      color="white" 
+                    />
+                  </View>
+                  <Text style={{ 
+                    color: 'black', 
+                    fontSize: 14, 
+                    fontWeight: currentUser.id === user.id ? 'bold' : 'normal' 
+                  }}>
+                    {user.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+
         {/* Stats Overview */}
         {stats && (
           <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
@@ -114,8 +180,10 @@ export default function ProfileScreen() {
 
               <View style={{ backgroundColor: theme.border, borderRadius: 16, height: 8 }}>
                 <View
-                  style={{ backgroundColor: theme.primary, borderRadius: 16, height: 8 }}
-                  style={{
+                  style={{ 
+                    backgroundColor: theme.primary, 
+                    borderRadius: 16, 
+                    height: 8,
                     width: `${Math.min((stats.currentWeekEntries / stats.weeklyGoal) * 100, 100)}%`
                   }}
                 />

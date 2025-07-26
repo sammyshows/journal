@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { apiService, ExploreResponse, ExploreMessage, JournalEntryCard } from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
+import { useUserStore } from '../../stores/useUserStore';
 
 interface Message {
   id: string;
@@ -17,6 +19,7 @@ interface Message {
 
 export default function AssistantScreen() {
   const { theme } = useAppSettingsStore();
+  const { currentUser, loadUserFromStorage } = useUserStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,13 +45,17 @@ export default function AssistantScreen() {
   ];
 
   useEffect(() => {
+    loadUserFromStorage();
+  }, []);
+
+  useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
   }, [messages]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isLoading) {
       setCurrentThinkingMessage(thinkingMessages[0]);
       setThinkingMessageIndex(0);
@@ -110,7 +117,7 @@ export default function AssistantScreen() {
         { role: 'user', content }
       ];
 
-      const response = await apiService.sendMessageToExplore(chatHistory);
+      const response = await apiService.sendMessageToExplore(chatHistory, currentUser.id);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

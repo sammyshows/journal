@@ -12,6 +12,16 @@
       }
     },
     "production": {
+      "distribution": "store",
+      "cache": {
+        "disabled": false
+      },
+      "ios": {
+        "cache": {
+          "cacheDefaultPaths": true,
+          "customPaths": ["node_modules"]
+        }
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://journal-production-d159.up.railway.app",
         "EXPO_PUBLIC_ENVIRONMENT": "production"
@@ -19,6 +29,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "samrmccarthy6@gmail.com",
+        "ascAppId": "6749180557",
+        "appleTeamId": "F74BA3P8QF"
+      }
+    }
   }
 } 

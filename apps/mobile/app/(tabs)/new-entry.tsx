@@ -12,11 +12,13 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 import { useJournalStore } from '@/stores/useJournalStore';
+import { useUserStore } from '../../stores/useUserStore';
 
 type Mode = 'text' | 'voice' | 'mixed';
 
 export default function NewJournalEntry() {
   const { theme } = useAppSettingsStore()
+  const { currentUser, loadUserFromStorage } = useUserStore();
   const { fetchEntries } = useJournalStore();
   const [mode, setMode] = useState<Mode>('text');
   const [content, setContent] = useState('');
@@ -25,6 +27,10 @@ export default function NewJournalEntry() {
   const [isSaving, setIsSaving] = useState(false);
   const [transcription, setTranscription] = useState('');
   const textInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    loadUserFromStorage();
+  }, []);
 
   // useEffect(() => {
   //   // Auto-focus text input when in text mode
@@ -105,7 +111,7 @@ export default function NewJournalEntry() {
     try {
       await addEntry({
         journal_entry_id,
-        userId: '123e4567-e89b-12d3-a456-426614174000',
+        userId: currentUser.id,
         content
       });
 
@@ -127,8 +133,8 @@ export default function NewJournalEntry() {
 
   const saveOnline = async (journal_entry_id: string, content: string) => {
     try {
-      await apiService.createJournalEntry(journal_entry_id, content);
-      await fetchEntries();
+      await apiService.createJournalEntry(journal_entry_id, content, currentUser.id);
+      await fetchEntries(currentUser.id);
     } catch (error) {
       console.error('Error saving entry:', error);
     }

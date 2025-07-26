@@ -62,8 +62,6 @@ export interface UserStats {
   currentWeekEntries: number;
 }
 
-// Configuration
-const DEFAULT_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 // API Client
 class ApiClient {
@@ -120,13 +118,12 @@ const apiClient = new ApiClient();
 
 export const apiService = {
   // Journal endpoints
-  async getJournalEntries(): Promise<JournalEntry[]> {
+  async getJournalEntries(userId: string): Promise<JournalEntry[]> {
     try {
-      
-      const response = await apiClient.get<{
+      const response = await apiClient.post<{
         success: boolean;
         data: JournalEntry[];
-      }>(`/journal-entries`);
+      }>('/journal-entries', { userId });
       
       return response.data;
     } catch (error) {
@@ -154,7 +151,7 @@ export const apiService = {
         message: string;
       }>('/finish', {
         journal_entry_id,
-        userId: userId || DEFAULT_USER_ID,
+        userId,
         chat,
         created_at
       });
@@ -170,7 +167,7 @@ export const apiService = {
   async getUserStats(userId?: string): Promise<UserStats> {
     try {
       // Get all entries for the user to compute stats
-      const entries = await this.getJournalEntries();
+      const entries = await this.getJournalEntries(userId);
       
       // Calculate streak
       const sortedEntries = entries.sort((a, b) => 
@@ -218,22 +215,10 @@ export const apiService = {
   },
 
   // Explore endpoint
-  async sendMessageToExplore(chat: ExploreMessage[]): Promise<ExploreResponse> {
+  async sendMessageToExplore(chat: ExploreMessage[], userId?: string): Promise<ExploreResponse> {
     try {
-      const response = await apiClient.post<ExploreResponse>('/explore', { chat });
+      const response = await apiClient.post<ExploreResponse>('/explore', { chat, userId });
       return response;
-    } catch (error) {
-      console.error('Error sending message to assistant:', error);
-      throw new Error('Failed to get AI response');
-    }
-  },
-
-  // Legacy method for compatibility
-  async sendMessageToAssistant(message: string): Promise<string> {
-    try {
-      const chat: ExploreMessage[] = [{ role: 'user', content: message }];
-      const response = await this.sendMessageToExplore(chat);
-      return response.reply;
     } catch (error) {
       console.error('Error sending message to assistant:', error);
       throw new Error('Failed to get AI response');
@@ -241,44 +226,44 @@ export const apiService = {
   },
 
   // Search endpoint
-  async searchEntries(query: string): Promise<SearchResponse> {
-    try {
-      const response = await apiClient.post<SearchResponse>('/search', { query });
-      return response;
-    } catch (error) {
-      console.error('Error searching entries:', error);
-      throw new Error('Search failed');
-    }
-  },
+  // async searchEntries(query: string, userId?: string): Promise<SearchResponse> {
+  //   try {
+  //     const response = await apiClient.post<SearchResponse>('/search', { query, userId });
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error searching entries:', error);
+  //     throw new Error('Search failed');
+  //   }
+  // },
 
   // Additional endpoints for mobile-specific features
-  async getSoulMapData(userId?: string) {
-    try {
-      const params = new URLSearchParams({
-        ...(userId && { userId: userId || DEFAULT_USER_ID })
-      });
+  // async getSoulMapData(userId?: string) {
+  //   try {
+  //     const params = new URLSearchParams({
+  //       ...(userId && { userId })
+  //     });
       
-      const response = await apiClient.get(`/soul-map?${params}`);
-      return response;
-    } catch (error) {
-      console.error('Error fetching soul map data:', error);
-      throw error;
-    }
-  },
+  //     const response = await apiClient.get(`/soul-map?${params}`);
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error fetching soul map data:', error);
+  //     throw error;
+  //   }
+  // },
 
-  async getTopNodes(limit: number = 5, userId?: string, relatedTo?: string) {
-    try {
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        ...(userId && { userId: userId || DEFAULT_USER_ID }),
-        ...(relatedTo && { relatedTo })
-      });
+  // async getTopNodes(limit: number = 5, userId?: string, relatedTo?: string) {
+  //   try {
+  //     const params = new URLSearchParams({
+  //       limit: limit.toString(),
+  //       ...(userId && { userId }),
+  //       ...(relatedTo && { relatedTo })
+  //     });
       
-      const response = await apiClient.get(`/top-nodes?${params}`);
-      return response;
-    } catch (error) {
-      console.error('Error fetching top nodes:', error);
-      throw error;
-    }
-  }
+  //     const response = await apiClient.get(`/top-nodes?${params}`);
+  //     return response;
+  //   } catch (error) {
+  //     console.error('Error fetching top nodes:', error);
+  //     throw error;
+  //   }
+  // }
 };

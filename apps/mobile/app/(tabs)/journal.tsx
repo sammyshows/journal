@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { JournalEntry } from '../../services/api';
 import { useJournalStore } from '../../stores/useJournalStore';
+import { useUserStore } from '../../stores/useUserStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 
@@ -59,6 +60,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
 
 export default function JournalScreen() {
   const { theme } = useAppSettingsStore();
+  const { currentUser, loadUserFromStorage } = useUserStore();
   const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -67,14 +69,18 @@ export default function JournalScreen() {
   const groupedEntries = groupEntriesByDate(entries);
 
   useEffect(() => {
-    if (!hasLoaded) {
-      fetchEntries();
+    loadUserFromStorage();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && !hasLoaded) {
+      fetchEntries(currentUser.id);
     }
-  }, [hasLoaded, fetchEntries]);
+  }, [currentUser, hasLoaded, fetchEntries]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchEntries();
+    await fetchEntries(currentUser.id);
     setRefreshing(false);
   };
 

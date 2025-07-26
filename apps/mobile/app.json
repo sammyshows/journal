@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.mobile"
+      "bundleIdentifier": "com.journal.sammc",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {

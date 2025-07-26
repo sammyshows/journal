@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>mobile</string>
-          <string>com.anonymous.mobile</string>
+          <string>com.journal.sammc</string>
         </array>
       </dict>
       <dict>
