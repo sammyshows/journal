@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
 import { GraphProcessorService } from '../graph/processor.service';
-import { FinishRequestDto, FinishResponseDto, JournalEntriesResponseDto, JournalEntry } from './journal.dto';
+import { CreateRequestDto, CreateResponseDto, DeleteResponseDto, JournalEntriesResponseDto, JournalEntry, JournalEntryResponseDto, UpdateRequestDto, UpdateResponseDto } from './journal.dto';
 import { GraphService } from 'src/graph/graph.service';
 
 @Injectable()
@@ -49,8 +49,14 @@ export class JournalService {
     }
   }
 
-  async finishJournalEntry(finishRequest: FinishRequestDto): Promise<FinishResponseDto> {
-    const { journal_entry_id, chat, userId, created_at } = finishRequest;
+  async getJournalEntry(entryId: string): Promise<JournalEntryResponseDto> {
+    const client = await this.databaseService.getClient();
+    const result = await client.query('SELECT * FROM journal_entries WHERE journal_entry_id = $1', [entryId]);
+    return result.rows[0];
+  }
+
+  async createJournalEntry(createRequest: CreateRequestDto): Promise<CreateResponseDto> {
+    const { journal_entry_id, chat, userId, created_at } = createRequest;
   
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid journal chat data');
@@ -197,5 +203,25 @@ export class JournalService {
     } finally {
       client.release();
     }
-  }  
+  }
+
+  async updateJournalEntry(updateRequest: UpdateRequestDto): Promise<UpdateResponseDto> {
+    const { journalEntryId, emoji, title } = updateRequest;
+
+    const client = await this.databaseService.getClient();
+    const result = await client.query(`
+      UPDATE journal_entries SET updated_at = NOW(), emoji = $2, title = $3 WHERE journal_entry_id = $1
+    `, [journalEntryId, emoji, title]);
+
+    return {
+      success: true,
+      message: 'Journal entry updated successfully'
+    };
+  }
+
+  async deleteJournalEntry(entryId: string): Promise<DeleteResponseDto> {
+    const client = await this.databaseService.getClient();
+    await client.query('DELETE FROM journal_entries WHERE journal_entry_id = $1', [entryId]);
+    return { success: true };
+  }
 }

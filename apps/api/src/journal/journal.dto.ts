@@ -13,7 +13,7 @@ export class JournalMessage {
   content: string;
 }
 
-export class FinishRequestDto {
+export class CreateRequestDto {
   @ApiProperty({ required: true })
   @IsString()
   journal_entry_id: string
@@ -35,7 +35,7 @@ export class FinishRequestDto {
   created_at?: string;
 }
 
-export class FinishResponseDto {
+export class CreateResponseDto {
   @ApiProperty()
   success: boolean;
 
@@ -117,4 +117,51 @@ export class GetJournalEntriesRequestDto {
   @ApiProperty({ description: 'User ID to fetch journal entries for' })
   @IsString()
   userId: string;
+}
+
+export class JournalEntryResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  data: JournalEntry;
+}
+
+export class GetJournalEntryRequestDto {
+  @ApiProperty({ description: 'Journal entry ID to fetch' })
+  @IsString()
+  journalEntryId: string;
+}
+
+export class UpdateRequestDto {
+  @ApiProperty({ description: 'Journal entry ID to update' })
+  @IsString()
+  journalEntryId: string;
+
+  @ApiProperty({ description: 'Emoji to update' })
+  @IsString()
+  emoji: string;
+
+  @ApiProperty({ description: 'Title to update' })
+  @IsString()
+  title: string;
+}
+
+export class UpdateResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  message: string;
+}
+
+export class DeleteRequestDto {
+  @ApiProperty({ description: 'Journal entry ID to delete' })
+  @IsString()
+  journalEntryId: string;
+}
+
+export class DeleteResponseDto {
+  @ApiProperty()
+  success: boolean;
 }
