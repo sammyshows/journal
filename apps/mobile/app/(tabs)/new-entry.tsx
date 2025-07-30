@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { VoiceMicButton } from '../../components/VoiceMicButton';
 import { FloatingToggle } from '../../components/FloatingToggle';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { apiService } from '../../services/api';
+import * as apiService from '../../services/api';
 import { addEntry } from '../../services/journalDatabase';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';

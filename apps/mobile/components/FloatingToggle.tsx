@@ -20,18 +20,14 @@ export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProp
   return (
     <View 
       style={{
+        display: 'flex',
         backgroundColor: theme.surface,
         borderRadius: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 8,
+        elevation: 8
       }}
     >
       {modes.map((mode) => {

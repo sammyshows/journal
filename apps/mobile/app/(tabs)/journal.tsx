@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -63,6 +63,7 @@ export default function JournalScreen() {
   const { currentUser, loadUserFromStorage } = useUserStore();
   const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [pressedEntry, setPressedEntry] = useState<string | null>(null);
 
   const insets = useSafeAreaInsets()
   
@@ -166,21 +167,37 @@ export default function JournalScreen() {
             {/* Entries for this date */}
             <View style={{ marginLeft: 32 }}>
               {group.entries.map((entry, entryIndex) => (
-                <TouchableOpacity
+                <Animated.View
                   key={entry.journal_entry_id}
                   style={{
-                    backgroundColor: theme.surface,
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: entryIndex === group.entries.length - 1 ? 0 : 12,
-                    shadowColor: theme.border,
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 50,
-                    
-                    elevation: 4,
+                    transform: [{
+                      scale: pressedEntry === entry.journal_entry_id ? 0.98 : 1,
+                    }],
                   }}
                 >
+                  <TouchableOpacity
+                    onPressIn={() => setPressedEntry(entry.journal_entry_id || null)}
+                    onPressOut={() => setPressedEntry(null)}
+                    onPress={() => {
+                      setPressedEntry(null);
+                      router.push({
+                        pathname: '/journal-entry',
+                        params: { id: entry.journal_entry_id }
+                      });
+                    }}
+                    style={{
+                      backgroundColor: theme.surface,
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: entryIndex === group.entries.length - 1 ? 0 : 12,
+                      shadowColor: theme.border,
+                      shadowOffset: { width: 0, height: 6 },
+                      shadowOpacity: 0.12,
+                      shadowRadius: 50,
+                      
+                      elevation: 4,
+                    }}
+                  >
                   {/* Entry Content */}
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
                     <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji}</Text>
@@ -214,7 +231,8 @@ export default function JournalScreen() {
                       </View>
                     ))}
                   </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </Animated.View>
               ))}
             </View>
           </View>

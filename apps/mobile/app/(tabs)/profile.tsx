@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StreakCounter } from '../../components/StreakCounter';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { apiService, UserStats } from '../../services/api';
+import * as apiService from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 import { useUserStore, User } from '../../stores/useUserStore';
 import { useJournalStore } from '../../stores/useJournalStore';
@@ -20,26 +20,26 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     loadUserFromStorage();
-    loadUserStats();
+    // loadUserStats();
   }, []);
 
-  useEffect(() => {
-    // Reload stats when user changes
-    if (currentUser) {
-      loadUserStats();
-    }
-  }, [currentUser.id]);
+  // useEffect(() => {
+  //   // Reload stats when user changes
+  //   if (currentUser) {
+  //     loadUserStats();
+  //   }
+  // }, [currentUser.id]);
 
-  const loadUserStats = async () => {
-    try {
-      const data = await apiService.getUserStats(currentUser.id);
-      setStats(data);
-    } catch (error) {
-      console.error('Error loading user stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const loadUserStats = async () => {
+  //   try {
+  //     const data = await apiService.getUserStats(currentUser.id);
+  //     setStats(data);
+  //   } catch (error) {
+  //     console.error('Error loading user stats:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleUserSelect = async (user: User) => {
     if (user.id !== currentUser.id) {

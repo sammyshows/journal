@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { apiService, ExploreResponse, ExploreMessage, JournalEntryCard } from '../../services/api';
+import * as apiService from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 import { useUserStore } from '../../stores/useUserStore';
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { apiService, JournalEntry } from '../services/api';
+import * as apiService from '../services/api';
+import { JournalEntry } from '../types';
 
 interface JournalStore {
   entries: JournalEntry[];
@@ -8,6 +9,7 @@ interface JournalStore {
   currentUserId: string | null;
   setEntries: (entries: JournalEntry[]) => void;
   fetchEntries: (userId?: string) => Promise<void>;
+  updateEntryInStore: (updatedEntry: JournalEntry) => void;
 }
 
 export const useJournalStore = create<JournalStore>((set, get) => ({
@@ -41,5 +43,15 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
         hasLoaded: true 
       });
     }
+  },
+  
+  updateEntryInStore: (updatedEntry: JournalEntry) => {
+    const { entries } = get();
+    const updatedEntries = entries.map(entry => 
+      entry.journal_entry_id === updatedEntry.journal_entry_id 
+        ? updatedEntry 
+        : entry
+    );
+    set({ entries: updatedEntries });
   },
 }));
