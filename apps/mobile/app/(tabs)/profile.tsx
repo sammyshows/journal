@@ -14,7 +14,7 @@ export default function ProfileScreen() {
   const { currentUser, users, setCurrentUser, loadUserFromStorage } = useUserStore();
   const { fetchEntries } = useJournalStore();
   const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [reminderTime, setReminderTime] = useState('8:00 PM');
 
