@@ -11,3 +11,5 @@ jobs:
     params:
       platform: ios
       profile: production
+      cache:
+        disabled: true

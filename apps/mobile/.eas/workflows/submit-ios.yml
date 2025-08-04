@@ -8,5 +8,6 @@ jobs:
   submit_ios:
     name: Submit iOS
     type: submit
+    dependsOn: [build_ios]
     params:
       platform: ios
