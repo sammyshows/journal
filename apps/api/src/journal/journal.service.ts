@@ -56,13 +56,12 @@ export class JournalService {
   }
 
   async createJournalEntry(createRequest: CreateRequestDto): Promise<CreateResponseDto> {
-    const { journal_entry_id, chat, userId, created_at } = createRequest;
+    const { journalEntryId, chat, userId, createdAt } = createRequest;
   
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid journal chat data');
     }
-  
-    console.log('Processing journal entry...');
+
   
     const chatText = chat.length === 1
       ? chat[0]?.content || 'Oops, no content.'
@@ -98,7 +97,7 @@ export class JournalService {
     console.log(`Extracted ${extraction.nodes.length} nodes and ${extraction.edges.length} edges`);
     
     const entryId = await this.saveJournalEntry({
-      journal_entry_id,
+      journal_entry_id: journalEntryId,
       user_id: userId || 'default-user',
       content: chatText,
       embedding,
@@ -112,7 +111,7 @@ export class JournalService {
         created_via: 'web_app',
         model_used: 'voyage-3-large'
       },
-      created_at
+      created_at: createdAt
     });
   
     console.log(`Journal entry saved with ID: ${entryId}`);

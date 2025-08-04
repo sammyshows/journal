@@ -16,7 +16,7 @@ export class JournalMessage {
 export class CreateRequestDto {
   @ApiProperty({ required: true })
   @IsString()
-  journal_entry_id: string
+  journalEntryId: string
 
   @ApiProperty({ type: [JournalMessage] })
   @IsArray()
@@ -32,7 +32,7 @@ export class CreateRequestDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  created_at?: string;
+  createdAt?: string;
 }
 
 export class CreateResponseDto {
