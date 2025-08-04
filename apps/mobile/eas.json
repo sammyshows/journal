@@ -18,8 +18,7 @@
       },
       "ios": {
         "cache": {
-          "cacheDefaultPaths": true,
-          "customPaths": ["node_modules"]
+          "disabled": true
         }
       },
       "env": {
