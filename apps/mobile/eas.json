@@ -14,7 +14,7 @@
     "production": {
       "distribution": "store",
       "cache": {
-        "disabled": false
+        "disabled": true
       },
       "ios": {
         "cache": {
@@ -23,7 +23,6 @@
         }
       },
       "env": {
-        "EAS_BUILD_DISABLE_NPM_CACHE": "1",
         "EXPO_PUBLIC_API_URL": "https://journal-production-d159.up.railway.app",
         "EXPO_PUBLIC_ENVIRONMENT": "production"
       }
