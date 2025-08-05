@@ -8,8 +8,7 @@ export class DatabaseService implements OnModuleDestroy {
 
   constructor(private configService: ConfigService) {
     this.pool = new Pool({
-      connectionString: this.configService.get<string>('DATABASE_URL') || 
-        'postgresql://postgres:postgres@localhost:5432/journal'
+      connectionString: this.configService.get<string>('DATABASE_URL') || 'postgresql://postgres:postgres@localhost:5432/journal'
     });
   }
 

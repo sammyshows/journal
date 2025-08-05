@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
 
 interface VoiceMicButtonProps {
   isRecording: boolean;
@@ -8,14 +9,15 @@ interface VoiceMicButtonProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-export function VoiceMicButton({ isRecording, onPress, size = 'large' }: VoiceMicButtonProps) {
+export function VoiceMicButton({ isRecording, onPress, size = 'medium' }: VoiceMicButtonProps) {
+  const { theme } = useAppSettingsStore();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
 
   const sizeClasses = {
-    small: 'w-12 h-12',
-    medium: 'w-16 h-16',
-    large: 'w-20 h-20'
+    small: 48,  // w-12 h-12
+    medium: 64, // w-16 h-16
+    large: 80   // w-20 h-20
   };
 
   const iconSizes = {
@@ -84,25 +86,25 @@ export function VoiceMicButton({ isRecording, onPress, size = 'large' }: VoiceMi
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="items-center justify-center active:scale-95"
       style={{
-        shadowColor: '#ec8320',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: theme.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
       }}
+      activeOpacity={0.95}
     >
       <Animated.View
-        className={`${sizeClasses[size]} rounded-full items-center justify-center ${
-          isRecording ? 'bg-red-500' : 'bg-primary-500'
-        }`}
         style={{
-          transform: [{ scale: pulseAnim }],
-          opacity: glowAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [1, 0.8],
-          }),
+          width: sizeClasses[size],
+          height: sizeClasses[size],
+          borderRadius: sizeClasses[size] / 2,
+          backgroundColor: "#ef4444",
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
         <Ionicons

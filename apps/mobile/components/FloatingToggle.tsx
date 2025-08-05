@@ -13,14 +13,14 @@ export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProp
   const { theme } = useAppSettingsStore()
   const modes: { key: Mode; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
     { key: 'text', icon: 'document-text-outline', label: 'Text' },
-    { key: 'voice', icon: 'mic-outline', label: 'Voice' },
-    { key: 'mixed', icon: 'layers-outline', label: 'Mixed' },
+    { key: 'voice', icon: 'mic-outline', label: 'Voice' }
   ];
 
   return (
     <View 
       style={{
         display: 'flex',
+        flexDirection: 'row',
         backgroundColor: theme.surface,
         borderRadius: 16,
         shadowColor: '#000',
@@ -40,6 +40,7 @@ export function FloatingToggle({ currentMode, onModeChange }: FloatingToggleProp
               paddingHorizontal: 16,
               paddingVertical: 8,
               borderRadius: 16,
+              display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
               gap: 8,
