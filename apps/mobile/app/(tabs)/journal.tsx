@@ -60,7 +60,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
 
 export default function JournalScreen() {
   const { theme } = useAppSettingsStore();
-  const { currentUser, loadUserFromStorage } = useUserStore();
+  const { currentUser } = useUserStore();
   const { entries, isLoading, hasLoaded, fetchEntries } = useJournalStore();
   const [refreshing, setRefreshing] = useState(false);
   const [pressedEntry, setPressedEntry] = useState<string | null>(null);
@@ -68,10 +68,6 @@ export default function JournalScreen() {
   const insets = useSafeAreaInsets()
   
   const groupedEntries = groupEntriesByDate(entries);
-
-  useEffect(() => {
-    loadUserFromStorage();
-  }, []);
 
   useEffect(() => {
     if (currentUser && !hasLoaded) {

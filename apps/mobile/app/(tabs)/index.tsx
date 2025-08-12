@@ -15,7 +15,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
-      <Text>Insightful stuff</Text>
+      <Text style={{ color: theme.text }}>Insightful stuff</Text>
     </SafeAreaView>
   );
 }

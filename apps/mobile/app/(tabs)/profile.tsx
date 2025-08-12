@@ -11,7 +11,7 @@ import { useJournalStore } from '../../stores/useJournalStore';
 
 export default function ProfileScreen() {
   const { theme, themeMode, setThemeMode } = useAppSettingsStore();
-  const { currentUser, users, setCurrentUser, loadUserFromStorage } = useUserStore();
+  const { currentUser, users, setCurrentUser } = useUserStore();
   const { fetchEntries } = useJournalStore();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,6 @@ export default function ProfileScreen() {
   const [reminderTime, setReminderTime] = useState('8:00 PM');
 
   useEffect(() => {
-    loadUserFromStorage();
     // loadUserStats();
   }, []);
 
@@ -146,7 +145,7 @@ export default function ProfileScreen() {
                     />
                   </View>
                   <Text style={{ 
-                    color: 'black', 
+                    color: theme.text, 
                     fontSize: 14, 
                     fontWeight: currentUser.id === user.id ? 'bold' : 'normal' 
                   }}>
@@ -197,7 +196,7 @@ export default function ProfileScreen() {
           {/* Preferences */}
           <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>
             <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-              <Text className="text-lg font-semibold text-gray-900">Preferences</Text>
+              <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'semibold' }}>Preferences</Text>
             </View>
             
             <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>

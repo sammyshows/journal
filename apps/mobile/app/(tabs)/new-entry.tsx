@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView, Keyboard, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -18,7 +18,7 @@ type Mode = 'text' | 'voice' | 'mixed';
 
 export default function NewJournalEntry() {
   const { theme } = useAppSettingsStore()
-  const { currentUser, loadUserFromStorage } = useUserStore();
+  const { currentUser } = useUserStore();
   const { fetchEntries } = useJournalStore();
   const [mode, setMode] = useState<Mode>('text');
   const [content, setContent] = useState('');
@@ -26,11 +26,41 @@ export default function NewJournalEntry() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [transcription, setTranscription] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
   const textInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    loadUserFromStorage();
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    const dimensionChangeListener = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenHeight(window.height);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+      dimensionChangeListener?.remove();
+    };
   }, []);
+
+  // Calculate dynamic max height for text input based on available space
+  const calculateMaxTextInputHeight = () => {
+    const headerHeight = 60; // Approximate header height
+    const modeToggleHeight = 50; // Approximate toggle height
+    const questionTextHeight = 40; // "What's on your mind?" text
+    const bottomPadding = 50; // Safety padding
+    const voiceButtonHeight = mode === 'voice' ? 120 : 0; // Voice button space when visible
+    
+    const availableHeight = screenHeight - keyboardHeight - headerHeight - modeToggleHeight - questionTextHeight - bottomPadding - voiceButtonHeight;
+    return keyboardHeight > 0 ? Math.min(availableHeight, 300) : availableHeight;
+  };
 
   // useEffect(() => {
   //   // Auto-focus text input when in text mode
@@ -197,14 +227,17 @@ export default function NewJournalEntry() {
               value={content}
               onChangeText={setContent}
               placeholder="Start writing your thoughts..."
+              placeholderTextColor={theme.muted}
               multiline
               textAlignVertical="top"
+              scrollEnabled={true}
               style={{
                 backgroundColor: theme.surface,
                 borderRadius: 16,
                 padding: 16,
                 minHeight: 200,
-                fontSize: 11,
+                maxHeight: calculateMaxTextInputHeight(),
+                fontSize: 13,
                 color: theme.text,
                 borderWidth: 1,
                 borderColor: theme.border,

@@ -19,7 +19,7 @@ interface Message {
 
 export default function AssistantScreen() {
   const { theme } = useAppSettingsStore();
-  const { currentUser, loadUserFromStorage } = useUserStore();
+  const { currentUser } = useUserStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +44,6 @@ export default function AssistantScreen() {
     "What am I avoiding in my life right now?"
   ];
 
-  useEffect(() => {
-    loadUserFromStorage();
-  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -423,7 +420,7 @@ export default function AssistantScreen() {
               placeholderTextColor={theme.muted}
               multiline
               maxLength={500}
-              className="p-4 rounded-2xl text-base placeholder:text-gray-400"
+              className="p-4 rounded-2xl text-base"
               style={{
                 color: theme.text,
                 textAlignVertical: 'top',
