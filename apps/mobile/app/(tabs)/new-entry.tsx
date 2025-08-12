@@ -50,18 +50,6 @@ export default function NewJournalEntry() {
     };
   }, []);
 
-  // Calculate dynamic max height for text input based on available space
-  const calculateMaxTextInputHeight = () => {
-    const headerHeight = 60; // Approximate header height
-    const modeToggleHeight = 50; // Approximate toggle height
-    const questionTextHeight = 40; // "What's on your mind?" text
-    const bottomPadding = 50; // Safety padding
-    const voiceButtonHeight = mode === 'voice' ? 120 : 0; // Voice button space when visible
-    
-    const availableHeight = screenHeight - keyboardHeight - headerHeight - modeToggleHeight - questionTextHeight - bottomPadding - voiceButtonHeight;
-    return keyboardHeight > 0 ? Math.min(availableHeight, 300) : availableHeight;
-  };
-
   // useEffect(() => {
   //   // Auto-focus text input when in text mode
   //   if (mode === 'text' && textInputRef.current) {
@@ -230,13 +218,12 @@ export default function NewJournalEntry() {
               placeholderTextColor={theme.muted}
               multiline
               textAlignVertical="top"
-              scrollEnabled={true}
+              scrollEnabled={false}
               style={{
                 backgroundColor: theme.surface,
                 borderRadius: 16,
                 padding: 16,
                 minHeight: 200,
-                maxHeight: calculateMaxTextInputHeight(),
                 fontSize: 13,
                 color: theme.text,
                 borderWidth: 1,
