@@ -33,12 +33,12 @@ CREATE TABLE journal_entries (
   ai_summary TEXT,
   
   -- Add index for user queries and vector similarity search
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE journal_entry_tags (
   journal_entry_tag_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  journal_entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  journal_entry_id UUID REFERENCES journal_entries(journal_entry_id) ON DELETE CASCADE,
   tag TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -49,7 +49,7 @@ CREATE TABLE nodes (
   node_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   label TEXT NOT NULL,           -- e.g. "self-doubt", "career"
   type TEXT NOT NULL,            -- e.g. "emotion", "theme", "person"
-  user_id UUID REFERENCES users(user_id), -- Node is specific to user
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE, -- Node is specific to user
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(label, type, user_id)   -- Prevent duplicate concepts per user
@@ -58,11 +58,11 @@ CREATE TABLE nodes (
 -- Edges: Relationships between nodes with temporal tracking
 CREATE TABLE edges (
   edge_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  from_node_id UUID REFERENCES nodes(node_id),
-  to_node_id UUID REFERENCES nodes(node_id),
+  from_node_id UUID REFERENCES nodes(node_id) ON DELETE CASCADE,
+  to_node_id UUID REFERENCES nodes(node_id) ON DELETE CASCADE,
   weight FLOAT DEFAULT 1.0,      -- Relationship strength (-1 to 1)
   timestamps TIMESTAMPTZ[] DEFAULT '{}',  -- When this relationship occurred
-  source_entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  source_entry_id UUID REFERENCES journal_entries(journal_entry_id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(user_id), -- Edge is specific to user
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -71,8 +71,8 @@ CREATE TABLE edges (
 -- Node-Entry mapping: Track which concepts appear in which entries  
 CREATE TABLE node_entry_map (
   node_entry_map_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  node_id UUID REFERENCES nodes(node_id),
-  entry_id UUID REFERENCES journal_entries(journal_entry_id),
+  node_id UUID REFERENCES nodes(node_id) ON DELETE CASCADE,
+  entry_id UUID REFERENCES journal_entries(journal_entry_id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(user_id), -- Mapping is specific to user
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

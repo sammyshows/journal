@@ -10,6 +10,7 @@ export interface User {
 interface UserStore {
   currentUser: User;
   users: User[];
+  loading: boolean;
   setCurrentUser: (user: User) => void;
   loadUserFromStorage: () => Promise<void>;
 }
@@ -33,21 +34,28 @@ const predefinedUsers: User[] = [
 ];
 
 export const useUserStore = create<UserStore>((set) => ({
-  currentUser: predefinedUsers[2], // Default to Test user
+  currentUser: predefinedUsers[2],
   users: predefinedUsers,
-  
+  loading: true,
+
   setCurrentUser: async (user: User) => {
     await AsyncStorage.setItem('currentUserId', user.id);
     set({ currentUser: user });
   },
-  
+
   loadUserFromStorage: async () => {
-    const savedUserId = await AsyncStorage.getItem('currentUserId');
-    if (savedUserId) {
-      const user = predefinedUsers.find(u => u.id === savedUserId);
-      if (user) {
-        set({ currentUser: user });
+    try {
+      const savedUserId = await AsyncStorage.getItem('currentUserId');
+      if (savedUserId) {
+        const user = predefinedUsers.find(u => u.id === savedUserId);
+        if (user) {
+          set({ currentUser: user });
+        }
       }
+    } catch(err) {
+      console.log('Error loading user from storage:', err)
+    } finally {
+      set({ loading: false });
     }
   }
-})); 
+}));

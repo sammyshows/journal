@@ -21,6 +21,7 @@ import { useAppSettingsStore } from '../stores/useAppSettingsStore';
 import { useJournalStore } from '../stores/useJournalStore';
 import { useUserStore } from '../stores/useUserStore';
 import { BlurView } from 'expo-blur';
+import { deleteLocalEntry } from '../services/journalDatabase';
 
 const EMOJI_LIST = [
   '😊', '😢', '😤', '😌', '💼', '❤️', '💪', '🍽️', '✈️', '📝',
@@ -248,6 +249,7 @@ export default function JournalEntryView() {
     
     setIsDeleting(true);
     try {
+      await deleteLocalEntry(entry.journal_entry_id);
       await apiService.deleteJournalEntry(entry.journal_entry_id)
       
       // Refetch entries to update the list

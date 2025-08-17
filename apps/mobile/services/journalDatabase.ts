@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
+import { createJournalEntry, getJournalEntries } from './api/journal';
+import { useUserStore } from '../stores/useUserStore';
 
 // Database configuration
 const DB_NAME = 'journal.db';
@@ -102,14 +104,15 @@ export const addEntry = dbFunctionWrapper(async (data: NewEntryData): Promise<st
 /**
  * Get all entries (both synced and unsynced) for local display
  */
-export const getAllEntries = dbFunctionWrapper(async (): Promise<LocalJournalEntry[]> => {
+export const getLocalEntries = dbFunctionWrapper(async (userId: string): Promise<LocalJournalEntry[]> => {
   try {
     if (!db) {
       await initDB();
     }
 
     const result = await db!.getAllAsync(
-      'SELECT * FROM entries ORDER BY created_at DESC'
+      'SELECT * FROM entries WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
     );
 
     return result as LocalJournalEntry[];
@@ -123,7 +126,7 @@ export const getAllEntries = dbFunctionWrapper(async (): Promise<LocalJournalEnt
  * Delete an entry from the local database
  * Use with caution - only for entries that haven't been synced
  */
-export const deleteEntry = dbFunctionWrapper(async (journal_entry_id: string): Promise<void> => {
+export const deleteLocalEntry = dbFunctionWrapper(async (journal_entry_id: string): Promise<void> => {
   try {
     if (!db) {
       await initDB();
@@ -156,3 +159,37 @@ export const closeDB = dbFunctionWrapper(async (): Promise<void> => {
     console.warn('Failed to close database:', error);
   }
 });
+
+export async function syncUnsyncedEntries() {
+  try {
+    const userId = useUserStore.getState().currentUser?.id;
+
+    const [localEntries, remoteEntries] = await Promise.all([
+      getLocalEntries(userId),
+      getJournalEntries(userId),
+    ]);
+
+    const remoteIds = new Set(remoteEntries.map(e => e.journal_entry_id));
+
+    const unsynced = localEntries.filter(local => !remoteIds.has(local.journal_entry_id));
+
+    console.log('[syncUnsyncedEntries] unsynced entry count', unsynced.length);
+
+    for (const entry of unsynced) {
+      console.log(`Syncing entry: ${entry.journal_entry_id}`);
+
+      await createJournalEntry(
+        entry.journal_entry_id,
+        entry.content,
+        entry.user_id,
+        entry.created_at // preserve original timestamp
+      );
+    }
+
+    if (unsynced.length > 0) {
+      console.log(`✅ Synced ${unsynced.length} entries.`);
+    }
+  } catch (err) {
+    console.warn('Error syncing unsynced entries:', err);
+  }
+}
