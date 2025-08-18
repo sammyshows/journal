@@ -91,6 +91,17 @@ if [ -d "$SEED_DIR" ]; then
             exit 1
         fi
     fi
+
+    # Seed user preferences
+    if [ -f "$SEED_DIR/user-preferences.sql" ]; then
+        echo -e "${YELLOW}   🔍 Seeding user preferences...${NC}"
+        docker exec -i $CONTAINER_NAME psql -U postgres -d journal < "$SEED_DIR/user-preferences.sql"
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error seeding user preferences${NC}"
+            exit 1
+        fi
+    fi
 else
     echo -e "${YELLOW}⚠️  No seed directory found, skipping additional data${NC}"
 fi

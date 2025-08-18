@@ -15,7 +15,28 @@ CREATE TABLE users (
   user_id UUID PRIMARY KEY UNIQUE NOT NULL DEFAULT uuid_generate_v4(), -- Will link to Supabase auth when implemented
   name TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  expo_push_token TEXT
+);
+
+CREATE TABLE push_tokens (
+  push_token_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+  push_token TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, push_token)
+);
+
+CREATE TABLE user_preferences (
+  user_preferences_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+  daily_reminders BOOLEAN DEFAULT TRUE,
+  daily_reminder_time TIME DEFAULT '18:00', -- Stored as HH:MM (5-min granularity possible)
+  last_daily_reminder_sent_time TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
 );
 
 -- Journal entries table

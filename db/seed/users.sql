@@ -1,2 +1,4 @@
 INSERT INTO users (user_id, name) VALUES
-('123e4567-e89b-12d3-a456-426614174000', 'Test User')
+('123e4567-e89b-12d3-a456-426614174000', 'Test User'),
+('123e9876-e89b-12d3-a456-426614174000', 'Sam'),
+('123e9876-e89b-12d3-a456-400014174000', 'Celine')
