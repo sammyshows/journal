@@ -9,12 +9,14 @@ if [ -z "$IP_ADDRESS" ]; then
     IP_ADDRESS="localhost"
 fi
 
-# Set the API URL with the detected IP address
+# Set the API URL using your IP address
 export EXPO_PUBLIC_API_URL="http://${IP_ADDRESS}:3001"
 
 echo "🌐 Setting API URL to: $EXPO_PUBLIC_API_URL"
-echo "📱 Starting Expo development server..."
+echo "📱 Running iOS development build with pnpm..."
 
-# Start Expo with tunnel and clear cache
-npx expo start --localhost --clear
-# npx expo start --tunnel --clear
+# Optional: clear metro cache (uncomment if needed)
+# rm -rf node_modules/.cache
+
+# Run the iOS development build
+pnpm expo run:ios
