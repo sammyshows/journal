@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "./scripts/start-dev.sh",
     "prod": "./scripts/start-prod.sh",
+    "ios:dev": "./scripts/run-ios-dev-build.sh",
+    "ios:prod": "./scripts/run-ios-prod-build.sh",
     "android": "expo run:android",
-    "ios": "./scripts/run-ios-build.sh",
     "web": "expo start --web",
     "lint": "expo lint",
     "build:dev": "npx eas build --profile development",

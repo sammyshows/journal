@@ -34,13 +34,13 @@ const EMOJI_LIST = [
 export default function JournalEntryView() {
   const { theme } = useAppSettingsStore();
   const { currentUser } = useUserStore();
-  const { updateEntryInStore, fetchEntries } = useJournalStore();
+  const { getEntry, updateEntryInStore, fetchEntries } = useJournalStore();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -92,17 +92,17 @@ export default function JournalEntryView() {
   }, [params.id]);
 
   useEffect(() => {
-    if (isEditingTitle && titleInputRef.current) {
+    if (isEditMode && titleInputRef.current) {
       titleInputRef.current.focus();
     }
-  }, [isEditingTitle]);
+  }, [isEditMode]);
 
   const loadEntry = async (entryId: string) => {
     try {
-      const entryData = await apiService.getJournalEntry(entryId);
-      if (entryData) {
-        setEntry(entryData);
-        setTempTitle(entryData.title || '');
+      const entry = await getEntry(entryId);
+      if (entry) {
+        setEntry(entry);
+        setTempTitle(entry.title || '');
       }
     } catch (error) {
       console.error('Error loading entry:', error);
@@ -131,14 +131,21 @@ export default function JournalEntryView() {
     });
   };
 
-  const handleTitlePress = () => {
-    setIsEditingTitle(true);
-    setTempTitle(entry?.title || '');
+  const handleEditToggle = () => {
+    if (isEditMode) {
+      // Save changes and exit edit mode
+      handleSaveChanges();
+    } else {
+      // Enter edit mode
+      setIsEditMode(true);
+      setTempTitle(entry?.title || '');
+    }
   };
 
-  const handleTitleSubmit = async () => {
+  const handleSaveChanges = async () => {
     if (!entry || !currentUser) return;
     
+    // Only update if title has changed
     if (tempTitle.trim() !== entry.title) {
       setHasChanges(true);
       const updatedEntry = { ...entry, title: tempTitle.trim() };
@@ -154,9 +161,17 @@ export default function JournalEntryView() {
       } catch (error) {
         console.error('Error updating title:', error);
         Alert.alert('Error', 'Failed to update title');
+        return; // Don't exit edit mode if save failed
       }
     }
-    setIsEditingTitle(false);
+    
+    setIsEditMode(false);
+    Keyboard.dismiss();
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setTempTitle(entry?.title || '');
     Keyboard.dismiss();
   };
 
@@ -275,7 +290,7 @@ export default function JournalEntryView() {
       setHasChanges(true);
       const updatedEntry = { 
         ...entry, 
-        created_at: newDateTime.toISOString() 
+        timestamp: newDateTime.toISOString() 
       };
       setEntry(updatedEntry);
       
@@ -294,15 +309,17 @@ export default function JournalEntryView() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    
+    return `${day}/${month}/${year} at ${hours}:${minutes}${ampm}`;
   };
 
   if (loading) {
@@ -373,39 +390,61 @@ export default function JournalEntryView() {
               fontWeight: '600',
               color: theme.text,
             }}>
-              Journal Entry
-            </Text>
-            <Text style={{
-              fontSize: 12,
-              color: theme.secondaryText,
-              marginTop: 2,
-            }}>
-              {formatDate(entry.created_at)}
+              {isEditMode ? 'Edit Entry' : 'Journal Entry'}
             </Text>
           </View>
 
-          <TouchableOpacity
-            onPress={() => setShowEditDateTime(true)}
-            style={{
-              padding: 8,
-              borderRadius: 20,
-              backgroundColor: theme.surface,
-              marginRight: 8,
-            }}
-          >
-            <Ionicons name="create-outline" size={20} color={theme.primary} />
-          </TouchableOpacity>
+          {isEditMode ? (
+            <>
+              <TouchableOpacity
+                onPress={handleCancelEdit}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: theme.surface,
+                  marginRight: 8,
+                }}
+              >
+                <Ionicons name="close" size={20} color={theme.secondaryText} />
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleDeletePress}
-            style={{
-              padding: 8,
-              borderRadius: 20,
-              backgroundColor: theme.surface,
-            }}
-          >
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
-          </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveChanges}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: theme.primary,
+                }}
+              >
+                <Ionicons name="checkmark" size={20} color="white" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                onPress={handleEditToggle}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: theme.surface,
+                  marginRight: 8,
+                }}
+              >
+                <Ionicons name="create-outline" size={20} color={theme.primary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleDeletePress}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: theme.surface,
+                }}
+              >
+                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              </TouchableOpacity>
+            </>
+          )}
         </Animated.View>
 
         <ScrollView
@@ -427,9 +466,12 @@ export default function JournalEntryView() {
               alignItems: 'flex-start',
               marginBottom: 24,
             }}>
-              <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <Animated.View style={{ 
+                transform: [{ scale: scaleAnim }],
+                position: 'relative'
+              }}>
                 <TouchableOpacity
-                  onPress={handleEmojiPress}
+                  onPress={isEditMode ? handleEmojiPress : undefined}
                   style={{
                     width: 60,
                     height: 60,
@@ -443,57 +485,145 @@ export default function JournalEntryView() {
                     shadowOpacity: 0.1,
                     shadowRadius: 8,
                     elevation: 3,
+                    borderWidth: isEditMode ? 1 : 0,
+                    borderColor: isEditMode ? `${theme.primary}60` : 'transparent',
                   }}
                 >
                   <Text style={{ fontSize: 28 }}>{entry.emoji || '📝'}</Text>
                 </TouchableOpacity>
+                
+                {isEditMode && (
+                  <View style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: 16,
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: theme.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}>
+                    <Ionicons name="pencil" size={12} color="white" />
+                  </View>
+                )}
               </Animated.View>
 
               <View style={{ flex: 1, justifyContent: 'center' }}>
-                {isEditingTitle ? (
+                {isEditMode ? (
                   <TextInput
                     ref={titleInputRef}
                     value={tempTitle}
                     onChangeText={setTempTitle}
-                    onSubmitEditing={handleTitleSubmit}
-                    onBlur={handleTitleSubmit}
+                    maxLength={30}
                     style={{
-                      fontSize: 24,
+                      fontSize: 18,
                       fontWeight: '700',
                       color: theme.text,
                       backgroundColor: theme.surface,
                       paddingHorizontal: 12,
                       paddingVertical: 8,
-                      borderRadius: 8,
-                      borderWidth: 2,
-                      borderColor: theme.primary,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: `${theme.primary}80`,
+                      shadowColor: theme.border,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 8,
+                      elevation: 2,
                     }}
                     placeholder="Enter title..."
                     placeholderTextColor={theme.muted}
                     multiline
-                    blurOnSubmit={true}
                   />
                 ) : (
-                  <TouchableOpacity onPress={handleTitlePress}>
+                  <View>
                     <Text style={{
-                      fontSize: 24,
+                      fontSize: 18,
                       fontWeight: '700',
                       color: theme.text,
                       lineHeight: 32,
+                      marginBottom: 4,
                     }}>
                       {entry.title || 'Untitled Entry'}
                     </Text>
-                  </TouchableOpacity>
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                    }}>
+                      <Ionicons name="calendar-outline" size={14} color={theme.secondaryText} />
+                      <Text style={{
+                        fontSize: 12,
+                        color: theme.secondaryText,
+                        marginLeft: 6,
+                      }}>
+                        {formatDate(entry.timestamp)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                
+                {isEditMode && (
+                  <Text style={{
+                    fontSize: 12,
+                    color: theme.secondaryText,
+                    marginTop: 4,
+                    marginLeft: 16,
+                  }}>
+                    {tempTitle.length}/30 characters
+                  </Text>
                 )}
               </View>
             </View>
+
+            {/* Date/Time Section - Only show in edit mode */}
+            {isEditMode && (
+              <View style={{
+                marginBottom: 24,
+              }}>
+                <TouchableOpacity 
+                  onPress={() => setShowEditDateTime(true)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: theme.surface,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: `${theme.primary}70`,
+                    shadowColor: theme.border,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={14} color={theme.primary} />
+                  <Text style={{
+                    fontSize: 12,
+                    fontWeight: '500',
+                    marginLeft: 12,
+                    flex: 1,
+                  }}>
+                    {formatDate(entry.timestamp)}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={theme.primary} />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Tags */}
             {entry.tags && entry.tags.length > 0 && (
               <View style={{
                 flexDirection: 'row',
                 flexWrap: 'wrap',
-                marginBottom: 24,
+                marginBottom: 8,
               }}>
                 {entry.tags.map((tag, index) => (
                   <View
@@ -520,27 +650,20 @@ export default function JournalEntryView() {
             )}
 
             {/* AI Summary */}
-            {entry.ai_summary && (
+            {entry.ai_summary && entry.content.length > 300 && (
               <View style={{
                 backgroundColor: theme.highlight,
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 24,
+                borderRadius: 8,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                marginBottom: 12,
                 borderWidth: 1,
                 borderColor: theme.border,
               }}>
                 <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
+                  fontSize: 12,
                   color: theme.text,
-                  marginBottom: 8,
-                }}>
-                  Summary
-                </Text>
-                <Text style={{
-                  fontSize: 15,
-                  color: theme.text,
-                  lineHeight: 22,
+                  lineHeight: 16,
                 }}>
                   {entry.ai_summary}
                 </Text>
@@ -550,8 +673,9 @@ export default function JournalEntryView() {
             {/* Full Entry Content */}
             <View style={{
               backgroundColor: theme.surface,
-              borderRadius: 16,
-              padding: 20,
+              borderRadius: 8,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
               shadowColor: theme.border,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.1,
@@ -559,9 +683,9 @@ export default function JournalEntryView() {
               elevation: 3,
             }}>
               <Text style={{
-                fontSize: 16,
+                fontSize: 12,
                 color: theme.text,
-                lineHeight: 24,
+                lineHeight: 16,
               }}>
                 {entry.content}
               </Text>
@@ -788,7 +912,7 @@ export default function JournalEntryView() {
             visible={showEditDateTime}
             onClose={() => setShowEditDateTime(false)}
             onConfirm={handleDateTimeUpdate}
-            currentDateTime={new Date(entry.created_at)}
+            currentDateTime={new Date(entry.timestamp)}
             title="Edit Date & Time"
           />
         )}

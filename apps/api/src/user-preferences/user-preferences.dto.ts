@@ -12,7 +12,6 @@ export interface UserPreferences {
   user_id: string;
   daily_reminders: boolean;
   daily_reminder_time: string; // TIME format from PostgreSQL (e.g., "18:00:00")
-  last_daily_reminder_sent_time?: Date;
   created_at: Date;
   updated_at: Date;
 }

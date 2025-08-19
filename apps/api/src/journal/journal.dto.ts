@@ -32,7 +32,7 @@ export class CreateRequestDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  createdAt?: string;
+  timestamp?: string;
 }
 
 export class CreateResponseDto {
@@ -76,6 +76,10 @@ export class JournalEntry {
 
   @ApiProperty()
   tags: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  timestamp?: string;
 
   @ApiProperty()
   @IsOptional()
@@ -171,9 +175,9 @@ export class UpdateDateTimeRequestDto {
   @IsString()
   journal_entry_id: string;
 
-  @ApiProperty({ description: 'New created_at timestamp' })
+  @ApiProperty({ description: 'New timestamp for the journal entry' })
   @IsString()
-  created_at: string;
+  timestamp: string;
 }
 
 export class UpdateDateTimeResponseDto {

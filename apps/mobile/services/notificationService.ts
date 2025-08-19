@@ -12,7 +12,6 @@ export interface UserPreferences {
   user_id: string;
   daily_reminders: boolean;
   daily_reminder_time: string;
-  last_daily_reminder_sent_time?: string;
   created_at: string;
   updated_at: string;
 }

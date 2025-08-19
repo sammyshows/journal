@@ -25,14 +25,16 @@ export class JournalService {
           je.emoji,
           je.content,
           je.user_summary,
+          je.ai_summary,
+          je.timestamp,
           je.created_at,
           je.updated_at,
           COALESCE(array_agg(jet.tag) FILTER (WHERE jet.tag IS NOT NULL), ARRAY[]::text[]) as tags
         FROM journal_entries je
         LEFT JOIN journal_entry_tags jet ON je.journal_entry_id = jet.journal_entry_id
         WHERE je.user_id = $1
-        GROUP BY je.journal_entry_id, je.title, je.emoji, je.content, je.user_summary, je.created_at, je.updated_at
-        ORDER BY je.created_at DESC
+        GROUP BY je.journal_entry_id, je.title, je.emoji, je.content, je.user_summary, je.ai_summary, je.timestamp, je.created_at, je.updated_at
+        ORDER BY je.timestamp DESC
         LIMIT 50
       `;
 
@@ -51,12 +53,34 @@ export class JournalService {
 
   async getJournalEntry(entryId: string): Promise<JournalEntryResponseDto> {
     const client = await this.databaseService.getClient();
-    const result = await client.query('SELECT * FROM journal_entries WHERE journal_entry_id = $1', [entryId]);
-    return result.rows[0];
+    
+    try {
+      let query = `
+        SELECT
+          je.journal_entry_id,
+          je.title,
+          je.emoji,
+          je.content,
+          je.user_summary,
+          je.timestamp,
+          je.created_at,
+          je.updated_at,
+          COALESCE(array_agg(jet.tag) FILTER (WHERE jet.tag IS NOT NULL), ARRAY[]::text[]) as tags
+        FROM journal_entries je
+        LEFT JOIN journal_entry_tags jet ON je.journal_entry_id = jet.journal_entry_id
+        WHERE je.journal_entry_id = $1
+        GROUP BY je.journal_entry_id, je.title, je.emoji, je.content, je.user_summary, je.timestamp, je.created_at, je.updated_at
+      `;
+
+      const result = await client.query(query, [entryId]);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
   }
 
   async createJournalEntry(createRequest: CreateRequestDto): Promise<CreateResponseDto> {
-    const { journalEntryId, chat, userId, createdAt } = createRequest;
+    const { journalEntryId, chat, userId, timestamp } = createRequest;
   
     if (!chat || !Array.isArray(chat)) {
       throw new BadRequestException('Invalid journal chat data');
@@ -111,7 +135,7 @@ export class JournalService {
         created_via: 'web_app',
         model_used: 'voyage-3-large'
       },
-      created_at: createdAt
+      timestamp: timestamp
     });
   
     console.log(`Journal entry saved with ID: ${entryId}`);
@@ -162,6 +186,10 @@ export class JournalService {
         entry.user_summary,
         entry.ai_summary
       ];
+  
+      // Always add timestamp - if not provided, use current time
+      columns.push("timestamp");
+      values.push(entry.timestamp || new Date().toISOString());
   
       if (entry.created_at) {
         columns.push("created_at");
@@ -225,15 +253,15 @@ export class JournalService {
   }
 
   async updateJournalEntryDateTime(updateRequest: UpdateDateTimeRequestDto): Promise<UpdateDateTimeResponseDto> {
-    const { journal_entry_id, created_at } = updateRequest;
+    const { journal_entry_id, timestamp } = updateRequest;
 
     const client = await this.databaseService.getClient();
     try {
       const result = await client.query(`
         UPDATE journal_entries 
-        SET updated_at = NOW(), created_at = $2 
+        SET updated_at = NOW(), timestamp = $2 
         WHERE journal_entry_id = $1
-      `, [journal_entry_id, created_at]);
+      `, [journal_entry_id, timestamp]);
 
       if (result.rowCount === 0) {
         throw new BadRequestException('Journal entry not found');

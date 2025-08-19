@@ -1,6 +1,7 @@
 export interface JournalEntry {
   journal_entry_id?: string;
   content: string;
+  timestamp: string;
   created_at: string;
   metadata?: {
     message_count?: number;

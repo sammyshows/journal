@@ -2,10 +2,10 @@ const logSQL = () => {
   const entries = getEntries();
   
   // Generate entries SQL
-  const entriesSQL = 'INSERT INTO journal_entries (journal_entry_id, user_id, title, emoji, user_summary, ai_summary, content, embedding, metadata, created_at, updated_at) VALUES\n' +
+  const entriesSQL = 'INSERT INTO journal_entries (journal_entry_id, user_id, title, emoji, user_summary, ai_summary, content, embedding, metadata, timestamp, created_at, updated_at) VALUES\n' +
     entries.map(
       (e) =>
-        `('${e.journal_entry_id}', '${e.user_id}', '${e.title.replace(/'/g, "''")}', '${e.emoji}', '${e.user_summary.replace(/'/g, "''")}', '${e.ai_summary.replace(/'/g, "''")}', '${e.content.replace(/'/g, "''")}', ${e.embedding || "'[]'::vector"}, ${e.metadata ? `'${JSON.stringify(e.metadata)}'` : "NULL"}, '${e.created_at}'::timestamp, '${e.updated_at}'::timestamp)`
+        `('${e.journal_entry_id}', '${e.user_id}', '${e.title.replace(/'/g, "''")}', '${e.emoji}', '${e.user_summary.replace(/'/g, "''")}', '${e.ai_summary.replace(/'/g, "''")}', '${e.content.replace(/'/g, "''")}', ${e.embedding || "'[]'::vector"}, ${e.metadata ? `'${JSON.stringify(e.metadata)}'` : "NULL"}, '${e.timestamp}'::timestamp, '${e.created_at}'::timestamp, '${e.updated_at}'::timestamp)`
     )
     .join(',\n') +
   ';\n\n';
@@ -34,6 +34,7 @@ const getEntries = () => [
     content: `I've been doing physio for my bad ankle lately. I hurt it running and I'm eager to get back to running. Interestingly, I was super motivated to do the work I was anticipating the physio to give me, because in the past I've been pretty bad in that department. I was very motivated BUT as soon as I got the exercises, I was underwhelmed and my motivation was gone! That surprised me. I think I was imagining more interesting exercises that I haven't heard of before, or some more advanced and technical work, but ultimately the exercises were incredibly basic and boring. I lost my inspiration from that I think.`,
     embedding: `'${embeddings['0793519f-056f-4777-8f0d-07c81440b0f2']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-05-30 23:21:29.268893',
     created_at: '2025-05-30 23:21:29.268893',
     updated_at: '2025-05-30 23:21:29.268893',
   },
@@ -48,6 +49,7 @@ const getEntries = () => [
     content: `Today I was working and I found out that a colleague is leaving! I'm close with them, probably the closest colleague I have. I emphasise having a good work-life balance, but it still sucks to see someone I like from the work side move on. I hope I cross paths with them again in future.`,
     embedding: `'${embeddings['9c3f59f5-7696-4e45-96b8-d8bbca9cdb9e']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-04 10:46:29.885574',
     created_at: '2025-06-04 10:46:29.885574',
     updated_at: '2025-06-04 10:46:29.885574',
   },
@@ -62,6 +64,7 @@ const getEntries = () => [
     content: `Today I had an epiphany - maybe the journal app doesn't need to be so AI centric. I mean, yes, AI is fundemental to what it does and completely necessary, but that doesn't mean the user has to know that? I love these moments because these are what go on to shape the product completely differently, I love idea developoment!`,
     embedding: `'${embeddings['526d9a7e-7067-423c-9bc1-f257af73efb8']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-04 10:48:10.976439',
     created_at: '2025-06-04 10:48:10.976439',
     updated_at: '2025-06-04 10:48:10.976439',
   },
@@ -76,6 +79,7 @@ const getEntries = () => [
     content: `I love music! I find myself often jumping between genres! I used to be really into rap. I loved Listening to 50 cent, eminem, jay z, kanye, kendrick etc. but 50 Cent was just cool... he got me fired up when I started going to the gym. I'll always remember that. Sometimes I even like country music! I grew up in a family that liked their country music, so it's part of me too. My brother nearly exlusively listens to country, but he's a farmer, so he's living the ethos`,
     embedding: `'${embeddings['84c34195-b142-4516-9b3b-096191821661']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-04 10:51:16.212229',
     created_at: '2025-06-04 10:51:16.212229',
     updated_at: '2025-06-04 10:51:16.212229',
   },
@@ -90,6 +94,7 @@ const getEntries = () => [
     content: `My partner and I had a fight this morning. We both had busy schedules ahead, and each thought the other was taking the kids to school. This resulted in us arguing about who was meant to do it, but ultimately we realised we just clearly weren't organised enough as a team. I decided I'll take the kids and she really appreciated that. I think it was for the best actually, it really earthed us and reminded us that our schedules aren't everything`,
     embedding: `'${embeddings['5ceeb164-b5d8-4f03-87ed-212afc2fa623']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-04 10:56:25.677924',
     created_at: '2025-06-04 10:56:25.677924',
     updated_at: '2025-06-04 10:56:25.677924',
   },
@@ -104,6 +109,7 @@ const getEntries = () => [
     content: `We caught up with some friends last night to go bowling and had them over for some games afterwards at our house. It was very fun, and surprisingly it was very rejuvenating for my fiancee and I. The next morning, we went for a walk, and talk about some important and meaningful things and had a absolutely wonderful chat. This energy continued all day and it was really nice. It made me realise the importance of having good quality time with our friends.`,
     embedding: `'${embeddings['adf944f0-3734-40a0-80e8-bbf99259b835']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-09 12:16:08.612939',
     created_at: '2025-06-09 12:16:08.612939',
     updated_at: '2025-06-09 12:16:08.612939',
   },
@@ -118,6 +124,7 @@ const getEntries = () => [
     content: `I’ve been pretty freaked out about this possum dammit. It’s making noises in the ceiling, clearly lives here, and I’m keen to get it out. Think I found where it’s getting in, so I laid some flour nearby to track footsteps next time. Keen to see if it leaves footsteps there in a couple days! Might have a lead!`,
     embedding: `'${embeddings['17061761-1088-426a-8dc0-d1d19da96013']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-19 10:57:40.56996',
     created_at: '2025-06-19 10:57:40.56996',
     updated_at: '2025-06-19 10:57:40.56996',
   },
@@ -132,6 +139,7 @@ const getEntries = () => [
     content: `I am learning Chinese and it’s very hard. I am learning I intend to go to China next month. I’m a bit worried about the language barrier but feel confident I could get a good level of Chinese within the next few days.`,
     embedding: `'${embeddings['cc548931-27a5-4590-bd92-ea1a5c0da2ef']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-19 11:11:05.432494',
     created_at: '2025-06-19 11:11:05.432494',
     updated_at: '2025-06-19 11:11:05.432494',
   },
@@ -146,6 +154,7 @@ const getEntries = () => [
     content: `I am planning my wedding. There is a lot to think about. I feel very confused with overwhelming feeling. I’m gonna forget everything and it’s gonna cost a fortune. ￼`,
     embedding: `'${embeddings['c8fb41d3-026a-4caf-94cf-5eb5009b0899']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-19 11:12:29.224723',
     created_at: '2025-06-19 11:12:29.224723',
     updated_at: '2025-06-19 11:12:29.224723',
   },
@@ -160,6 +169,7 @@ const getEntries = () => [
     content: `I’ve been pretty freaked out about this possum dammit. It’s making noises in the ceiling, clearly lives here, and I’m keen to get it out. Think I found where it’s getting in, so I laid some flour nearby to track footsteps next time. Keen to see if it leaves footsteps there in a couple days! Might have a lead!`,
     embedding: `'${embeddings['16ec7260-9a4f-429f-a7a0-9bcd2410f2b1']}'`,
     metadata: { model_used: 'voyage-3-large', created_via: 'web_app', message_count: 1 },
+    timestamp: '2025-06-19 10:56:39.841495',
     created_at: '2025-06-19 10:56:39.841495',
     updated_at: '2025-06-19 10:56:39.841495',
   },

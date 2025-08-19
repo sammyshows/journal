@@ -19,21 +19,20 @@ CREATE TABLE users (
   expo_push_token TEXT
 );
 
-CREATE TABLE push_tokens (
-  push_token_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-  push_token TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, push_token)
-);
+-- CREATE TABLE push_tokens (
+--   push_token_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--   user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+--   push_token TEXT NOT NULL,
+--   created_at TIMESTAMPTZ DEFAULT now(),
+--   updated_at TIMESTAMPTZ DEFAULT now(),
+--   UNIQUE(user_id, push_token)
+-- );
 
 CREATE TABLE user_preferences (
   user_preferences_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
   daily_reminders BOOLEAN DEFAULT TRUE,
   daily_reminder_time TIME DEFAULT '18:00', -- Stored as HH:MM (5-min granularity possible)
-  last_daily_reminder_sent_time TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id)
@@ -45,6 +44,7 @@ CREATE TABLE journal_entries (
   user_id UUID NOT NULL, -- Foreign key to users.user_id
   content TEXT NOT NULL,
   embedding vector(1024), -- Voyage-3-large produces 1024-dimensional vectors
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   metadata JSONB DEFAULT '{}', -- Store additional context (voice transcription confidence, etc.)

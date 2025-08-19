@@ -31,8 +31,14 @@ export async function getJournalEntry(journalEntryId: string): Promise<JournalEn
   }
 }
 
-export async function createJournalEntry(journalEntryId: string, content: string, userId: string, createdAt?: string): Promise<{ success: boolean; entryId: string; message: string }> {
+export async function createJournalEntry(journalEntryId: string, content: string, userId: string, timestamp?: string): Promise<{ success: boolean; entryId: string; message: string }> {
+  // Import here to avoid circular dependency
+  const { useJournalStore } = await import('../../stores/useJournalStore');
+  const { setSyncInProgress } = useJournalStore.getState();
+  
   try {
+    setSyncInProgress(true);
+    
     const chat: JournalMessage[] = [{ role: 'user', content }];
     const response = await apiClient.post<{
       success: boolean;
@@ -42,13 +48,15 @@ export async function createJournalEntry(journalEntryId: string, content: string
       journalEntryId,
       userId,
       chat,
-      createdAt
+      timestamp
     });
     
     return response;
   } catch (error) {
     console.error('Error creating journal entry:', error);
     throw error;
+  } finally {
+    setSyncInProgress(false);
   }
 }
 
@@ -84,19 +92,27 @@ export async function deleteJournalEntry(journalEntryId: string): Promise<{ succ
   }
 }
 
-export async function updateJournalEntryDateTime(journalEntryId: string, createdAt: string): Promise<{ success: boolean; message: string }> {
+export async function updateJournalEntryDateTime(journalEntryId: string, timestamp: string): Promise<{ success: boolean; message: string }> {
+  // Import here to avoid circular dependency
+  const { useJournalStore } = await import('../../stores/useJournalStore');
+  const { setSyncInProgress } = useJournalStore.getState();
+  
   try {
+    setSyncInProgress(true);
+    
     const response = await apiClient.post<{
       success: boolean;
       message: string;
     }>('/update-journal-entry-datetime', {
       journal_entry_id: journalEntryId,
-      created_at: createdAt
+      timestamp: timestamp
     });
     
     return response;
   } catch (error) {
     console.error('Error updating journal entry date/time:', error);
     throw error;
+  } finally {
+    setSyncInProgress(false);
   }
 }

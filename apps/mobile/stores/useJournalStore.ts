@@ -7,9 +7,12 @@ interface JournalStore {
   isLoading: boolean;
   hasLoaded: boolean;
   currentUserId: string | null;
+  syncInProgress: boolean;
   setEntries: (entries: JournalEntry[]) => void;
   fetchEntries: (userId?: string) => Promise<void>;
   updateEntryInStore: (updatedEntry: JournalEntry) => void;
+  getEntry: (entryId: string) => JournalEntry | undefined;
+  setSyncInProgress: (inProgress: boolean) => void;
 }
 
 export const useJournalStore = create<JournalStore>((set, get) => ({
@@ -17,6 +20,7 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
   isLoading: false,
   hasLoaded: false,
   currentUserId: null,
+  syncInProgress: false,
   
   setEntries: (entries: JournalEntry[]) => {
     set({ entries });
@@ -44,14 +48,24 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
       });
     }
   },
+
+  getEntry: (entryId: string) => {
+    const { entries } = get();
+    return entries.find(entry => entry.journal_entry_id === entryId);
+  },
   
   updateEntryInStore: (updatedEntry: JournalEntry) => {
     const { entries } = get();
+
     const updatedEntries = entries.map(entry => 
       entry.journal_entry_id === updatedEntry.journal_entry_id 
         ? updatedEntry 
         : entry
     );
     set({ entries: updatedEntries });
+  },
+
+  setSyncInProgress: (inProgress: boolean) => {
+    set({ syncInProgress: inProgress });
   },
 }));
