@@ -41,6 +41,14 @@ export const useUserStore = create<UserStore>((set) => ({
   setCurrentUser: async (user: User) => {
     await AsyncStorage.setItem('currentUserId', user.id);
     set({ currentUser: user });
+    
+    // Refresh notifications for the new user (dynamic import to avoid circular dependency)
+    try {
+      const notificationService = (await import('../services/notificationService')).default;
+      await notificationService.initializeNotifications(user.id);
+    } catch (error) {
+      console.error('Error initializing notifications for new user:', error);
+    }
   },
 
   loadUserFromStorage: async () => {

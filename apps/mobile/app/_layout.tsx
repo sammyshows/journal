@@ -3,13 +3,21 @@ import { useEffect } from "react";
 import { useUserStore } from "../stores/useUserStore";
 import { View, ActivityIndicator } from "react-native";
 import { syncUnsyncedEntries } from "@/services/journalDatabase";
+import notificationService from "../services/notificationService";
 
 export default function Layout() {
-  const { loadUserFromStorage, loading } = useUserStore();
+  const { loadUserFromStorage, loading, currentUser } = useUserStore();
 
   useEffect(() => {
     loadUserFromStorage();
   }, []);
+
+  // Initialize notifications when user is loaded
+  useEffect(() => {
+    if (!loading && currentUser) {
+      notificationService.initializeNotifications(currentUser.id);
+    }
+  }, [loading, currentUser]);
 
   useEffect(() => {
     const interval = setInterval(() => {

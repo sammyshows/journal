@@ -165,3 +165,21 @@ export class DeleteResponseDto {
   @ApiProperty()
   success: boolean;
 }
+
+export class UpdateDateTimeRequestDto {
+  @ApiProperty({ description: 'Journal entry ID to update' })
+  @IsString()
+  journal_entry_id: string;
+
+  @ApiProperty({ description: 'New created_at timestamp' })
+  @IsString()
+  created_at: string;
+}
+
+export class UpdateDateTimeResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  message: string;
+}

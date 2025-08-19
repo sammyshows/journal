@@ -83,3 +83,20 @@ export async function deleteJournalEntry(journalEntryId: string): Promise<{ succ
     throw error;
   }
 }
+
+export async function updateJournalEntryDateTime(journalEntryId: string, createdAt: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+    }>('/update-journal-entry-datetime', {
+      journal_entry_id: journalEntryId,
+      created_at: createdAt
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error updating journal entry date/time:', error);
+    throw error;
+  }
+}

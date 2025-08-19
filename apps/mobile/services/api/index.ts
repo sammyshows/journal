@@ -4,6 +4,7 @@ export {
   getJournalEntry,
   createJournalEntry,
   updateJournalEntry,
+  updateJournalEntryDateTime,
   deleteJournalEntry,
 } from './journal';
 

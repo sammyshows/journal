@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'WARNING: API URL unset'
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'WARNING: API URL unset (services/api/client.ts)'
 
 class ApiClient {
   private baseUrl: string;

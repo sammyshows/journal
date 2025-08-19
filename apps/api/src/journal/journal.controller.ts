@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JournalService } from './journal.service';
-import { CreateRequestDto, CreateResponseDto, JournalEntriesResponseDto, GetJournalEntriesRequestDto, JournalEntryResponseDto, GetJournalEntryRequestDto, UpdateRequestDto, UpdateResponseDto, DeleteRequestDto, DeleteResponseDto } from './journal.dto';
+import { CreateRequestDto, CreateResponseDto, JournalEntriesResponseDto, GetJournalEntriesRequestDto, JournalEntryResponseDto, GetJournalEntryRequestDto, UpdateRequestDto, UpdateResponseDto, DeleteRequestDto, DeleteResponseDto, UpdateDateTimeRequestDto, UpdateDateTimeResponseDto } from './journal.dto';
 
 @ApiTags('journal')
 @Controller()
@@ -84,6 +84,23 @@ export class JournalController {
       console.error('Error in delete API:', error);
       throw new HttpException(
         'Failed to process delete request',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('update-journal-entry-datetime')
+  @ApiOperation({ summary: 'Update journal entry date and time' })
+  @ApiResponse({ status: 200, description: 'Journal entry date/time updated', type: UpdateDateTimeResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid journal entry data' })
+  @ApiResponse({ status: 500, description: 'Failed to process datetime update request' })
+  async updateDateTime(@Body() body: UpdateDateTimeRequestDto): Promise<UpdateDateTimeResponseDto> {
+    try {
+      return await this.journalService.updateJournalEntryDateTime(body);
+    } catch (error) {
+      console.error('Error in update datetime API:', error);
+      throw new HttpException(
+        'Failed to process datetime update request',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

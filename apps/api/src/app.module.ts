@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { AiModule } from './ai/ai.module';
 import { CommonModule } from './common/common.module';
+import { UserPreferencesModule } from './user-preferences/user-preferences.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CommonModule } from './common/common.module';
     GraphModule,
     SearchModule,
     UsersModule,
+    UserPreferencesModule,
   ],
 })
 export class AppModule {}

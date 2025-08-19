@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StreakCounter } from '../../components/StreakCounter';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import { NotificationPreferences } from '../../components/NotificationPreferences';
 import * as apiService from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 import { useUserStore, User } from '../../stores/useUserStore';
@@ -233,37 +234,11 @@ export default function ProfileScreen() {
                   ))}
                 </View>
               </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="notifications" size={20} color={theme.secondaryText} />
-                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Daily Reminders</Text>
-                </View>
-                <Switch
-                  value={remindersEnabled}
-                  onValueChange={handleReminderToggle}
-                  trackColor={{ false: theme.border, true: theme.border }}
-                  thumbColor={remindersEnabled ? theme.primary : theme.border}
-                />
-              </View>
-
-              {remindersEnabled && (
-                <TouchableOpacity
-                  onPress={handleReminderTimePress}
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.border }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="time" size={20} color={theme.secondaryText} />
-                    <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Reminder Time</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: theme.primary, fontSize: 16, marginRight: 8 }}>{reminderTime}</Text>
-                    <Ionicons name="chevron-forward" size={16} color={theme.primary} />
-                  </View>
-                </TouchableOpacity>
-              )}
             </View>
           </View>
+
+          {/* Daily Reminders */}
+          <NotificationPreferences userId={currentUser.id} />
 
           {/* Data & Privacy */}
           <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>

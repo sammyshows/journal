@@ -22,6 +22,7 @@ import { useJournalStore } from '../stores/useJournalStore';
 import { useUserStore } from '../stores/useUserStore';
 import { BlurView } from 'expo-blur';
 import { deleteLocalEntry } from '../services/journalDatabase';
+import { CalendarDateTimePicker } from '../components/CalendarDateTimePicker';
 
 const EMOJI_LIST = [
   '😊', '😢', '😤', '😌', '💼', '❤️', '💪', '🍽️', '✈️', '📝',
@@ -45,6 +46,7 @@ export default function JournalEntryView() {
   const [hasChanges, setHasChanges] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditDateTime, setShowEditDateTime] = useState(false);
   
   const slideAnim = useRef(new Animated.Value(1)).current;
   const titleInputRef = useRef<TextInput>(null);
@@ -143,11 +145,11 @@ export default function JournalEntryView() {
       setEntry(updatedEntry);
       
       try {
-        await apiService.post('/update-journal-entry', {
-          journal_entry_id: entry.journal_entry_id,
-          title: tempTitle.trim(),
-          emoji: entry.emoji,
-        });
+        await apiService.updateJournalEntry(
+          entry.journal_entry_id,
+          tempTitle.trim(),
+          entry.emoji
+        );
         updateEntryInStore(updatedEntry);
       } catch (error) {
         console.error('Error updating title:', error);
@@ -266,6 +268,30 @@ export default function JournalEntryView() {
     }
   };
 
+  const handleDateTimeUpdate = async (newDateTime: Date) => {
+    if (!entry || !currentUser) return;
+    
+    try {
+      setHasChanges(true);
+      const updatedEntry = { 
+        ...entry, 
+        created_at: newDateTime.toISOString() 
+      };
+      setEntry(updatedEntry);
+      
+      await apiService.updateJournalEntryDateTime(
+        entry.journal_entry_id,
+        newDateTime.toISOString()
+      );
+      
+      updateEntryInStore(updatedEntry);
+      setShowEditDateTime(false);
+    } catch (error) {
+      console.error('Error updating date/time:', error);
+      Alert.alert('Error', 'Failed to update date and time');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -357,6 +383,18 @@ export default function JournalEntryView() {
               {formatDate(entry.created_at)}
             </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => setShowEditDateTime(true)}
+            style={{
+              padding: 8,
+              borderRadius: 20,
+              backgroundColor: theme.surface,
+              marginRight: 8,
+            }}
+          >
+            <Ionicons name="create-outline" size={20} color={theme.primary} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleDeletePress}
@@ -743,6 +781,17 @@ export default function JournalEntryView() {
             </View>
           </View>
         </Modal>
+
+        {/* Date Time Picker Modal */}
+        {entry && (
+          <CalendarDateTimePicker
+            visible={showEditDateTime}
+            onClose={() => setShowEditDateTime(false)}
+            onConfirm={handleDateTimeUpdate}
+            currentDateTime={new Date(entry.created_at)}
+            title="Edit Date & Time"
+          />
+        )}
       </SafeAreaView>
     </Animated.View>
   );

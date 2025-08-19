@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AiService } from '../ai/ai.service';
 import { GraphProcessorService } from '../graph/processor.service';
-import { CreateRequestDto, CreateResponseDto, DeleteResponseDto, JournalEntriesResponseDto, JournalEntry, JournalEntryResponseDto, UpdateRequestDto, UpdateResponseDto } from './journal.dto';
+import { CreateRequestDto, CreateResponseDto, DeleteResponseDto, JournalEntriesResponseDto, JournalEntry, JournalEntryResponseDto, UpdateRequestDto, UpdateResponseDto, UpdateDateTimeRequestDto, UpdateDateTimeResponseDto } from './journal.dto';
 import { GraphService } from 'src/graph/graph.service';
 
 @Injectable()
@@ -222,5 +222,29 @@ export class JournalService {
     const client = await this.databaseService.getClient();
     await client.query('DELETE FROM journal_entries WHERE journal_entry_id = $1', [entryId]);
     return { success: true };
+  }
+
+  async updateJournalEntryDateTime(updateRequest: UpdateDateTimeRequestDto): Promise<UpdateDateTimeResponseDto> {
+    const { journal_entry_id, created_at } = updateRequest;
+
+    const client = await this.databaseService.getClient();
+    try {
+      const result = await client.query(`
+        UPDATE journal_entries 
+        SET updated_at = NOW(), created_at = $2 
+        WHERE journal_entry_id = $1
+      `, [journal_entry_id, created_at]);
+
+      if (result.rowCount === 0) {
+        throw new BadRequestException('Journal entry not found');
+      }
+
+      return {
+        success: true,
+        message: 'Journal entry date and time updated successfully'
+      };
+    } finally {
+      client.release();
+    }
   }
 }
