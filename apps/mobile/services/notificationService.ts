@@ -108,8 +108,8 @@ class NotificationService {
           },
         },
         trigger: {
-          hour: hours,
-          minute: minutes,
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: scheduledTime,
           repeats: true,
         },
       });
@@ -214,7 +214,10 @@ class NotificationService {
         body: "This is a test notification to verify local notifications work!",
         data: { type: 'test' },
       },
-      trigger: { seconds: 3 },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 3,
+      },
     });
     
     console.log('Test notification scheduled successfully');
