@@ -249,6 +249,7 @@ export function DateTimePicker({
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingVertical: 4 }}
+              style={{ maxHeight: 140, maxHeight: 120 }}
             >
               {options.map((option, index) => (
                 <TouchableOpacity
@@ -498,7 +499,7 @@ export function DateTimePicker({
             {/* Time Section */}
             <View style={{
               paddingHorizontal: 24,
-              marginBottom: 60,
+              marginBottom: 100,
             }}>
               <Text style={{
                 fontSize: 18,

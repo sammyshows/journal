@@ -178,6 +178,7 @@ export function TimePicker({
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingVertical: 4 }}
+              style={{ maxHeight: 140 }}
             >
               {options.map((option, index) => (
                 <TouchableOpacity
@@ -309,7 +310,7 @@ export function TimePicker({
           {/* Time Dropdowns */}
           <View style={{
             paddingHorizontal: 24,
-            marginBottom: 60,
+            marginBottom: 80,
           }}>
             <View style={{
               flexDirection: 'row',
