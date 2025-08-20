@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, Animated, Dimensions }
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSettingsStore } from '../stores/useAppSettingsStore';
 
-interface ModernTimePickerProps {
+interface TimePickerProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (time: string) => void;
@@ -13,13 +13,13 @@ interface ModernTimePickerProps {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export function ModernTimePicker({ 
+export function TimePicker({ 
   visible, 
   onClose, 
   onSelect, 
   currentTime, 
   title = "Select Time" 
-}: ModernTimePickerProps) {
+}: TimePickerProps) {
   const { theme } = useAppSettingsStore();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -39,6 +39,10 @@ export function ModernTimePicker({
     const [hour] = currentTime.split(':');
     return parseInt(hour, 10) >= 12 ? 'PM' : 'AM';
   });
+
+  const [showHourDropdown, setShowHourDropdown] = useState(false);
+  const [showMinuteDropdown, setShowMinuteDropdown] = useState(false);
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1); // 1-12
   const minutes = Array.from({ length: 12 }, (_, i) => i * 5); // 0, 5, 10, ..., 55
@@ -106,56 +110,105 @@ export function ModernTimePicker({
     return `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
   };
 
-  const renderScrollableColumn = (
+  const renderDropdown = (
     title: string,
-    items: any[],
-    selectedValue: any,
-    onValueChange: (value: any) => void,
-    formatter: (value: any) => string
+    value: string | number,
+    isOpen: boolean,
+    onToggle: () => void,
+    options: (string | number)[],
+    onSelect: (value: string | number) => void,
+    formatter?: (value: string | number) => string
   ) => (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, marginHorizontal: 4 }}>
       <Text style={{
         fontSize: 14,
         fontWeight: '600',
         color: theme.secondaryText,
-        textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
       }}>
         {title}
       </Text>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 60 }}
-        style={{ height: 180 }}
-      >
-        {items.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => onValueChange(item)}
-            style={{
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              marginHorizontal: 4,
-              borderRadius: 12,
-              backgroundColor: selectedValue === item ? `${theme.primary}20` : 'transparent',
-              borderWidth: selectedValue === item ? 2 : 1,
-              borderColor: selectedValue === item ? theme.primary : theme.border,
-              marginBottom: 4,
-            }}
-          >
-            <Text
-              style={{
-                textAlign: 'center',
-                fontSize: 16,
-                fontWeight: selectedValue === item ? '600' : '400',
-                color: selectedValue === item ? theme.primary : theme.text,
-              }}
+      <View style={{ position: 'relative' }}>
+        <TouchableOpacity
+          onPress={onToggle}
+          style={{
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 12,
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: isOpen ? theme.primary : theme.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '500',
+            color: theme.text,
+          }}>
+            {formatter ? formatter(value) : value}
+          </Text>
+          <Ionicons 
+            name={isOpen ? "chevron-up" : "chevron-down"} 
+            size={16} 
+            color={theme.secondaryText} 
+          />
+        </TouchableOpacity>
+        
+        {isOpen && (
+          <View style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            backgroundColor: theme.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: theme.border,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 8,
+            zIndex: 1000,
+            maxHeight: 200,
+          }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
             >
-              {formatter(item)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              {options.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    onSelect(option);
+                    onToggle();
+                  }}
+                  style={{
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    backgroundColor: value === option ? `${theme.primary}20` : 'transparent',
+                    borderRadius: 8,
+                    marginHorizontal: 4,
+                    marginVertical: 1,
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: value === option ? '600' : '400',
+                    color: value === option ? theme.primary : theme.text,
+                    textAlign: 'center',
+                  }}>
+                    {formatter ? formatter(option) : option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </View>
     </View>
   );
 
@@ -174,7 +227,19 @@ export function ModernTimePicker({
             opacity: backdropAnim,
           }}
         >
-          <TouchableOpacity style={{ flex: 1 }} onPress={onClose} />
+          <TouchableOpacity 
+            style={{ flex: 1 }} 
+            onPress={() => {
+              // Close dropdowns if any are open, otherwise close modal
+              if (showHourDropdown || showMinuteDropdown || showPeriodDropdown) {
+                setShowHourDropdown(false);
+                setShowMinuteDropdown(false);
+                setShowPeriodDropdown(false);
+              } else {
+                onClose();
+              }
+            }} 
+          />
         </Animated.View>
 
         {/* Modal Content */}
@@ -224,12 +289,6 @@ export function ModernTimePicker({
               }}>
                 {title}
               </Text>
-              <Text style={{
-                fontSize: 16,
-                color: theme.secondaryText,
-              }}>
-                {formatDisplayTime(selectedHour, selectedMinute, selectedPeriod)}
-              </Text>
             </View>
 
             <TouchableOpacity
@@ -247,39 +306,59 @@ export function ModernTimePicker({
             </TouchableOpacity>
           </View>
 
-          {/* Time Selectors */}
+          {/* Time Dropdowns */}
           <View style={{
-            flexDirection: 'row',
-            paddingHorizontal: 16,
-            marginBottom: 24,
-            gap: 8,
+            paddingHorizontal: 24,
+            marginBottom: 60,
           }}>
-            {/* Hour Column */}
-            {renderScrollableColumn(
-              "Hour",
-              hours,
-              selectedHour,
-              setSelectedHour,
-              (hour: number) => hour.toString()
-            )}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+            }}>
+              {/* Hour Dropdown */}
+              {renderDropdown(
+                "Hour",
+                selectedHour,
+                showHourDropdown,
+                () => {
+                  setShowHourDropdown(!showHourDropdown);
+                  setShowMinuteDropdown(false);
+                  setShowPeriodDropdown(false);
+                },
+                hours,
+                (hour) => setSelectedHour(hour as number),
+                (hour) => hour.toString()
+              )}
 
-            {/* Minute Column */}
-            {renderScrollableColumn(
-              "Min",
-              minutes,
-              selectedMinute,
-              setSelectedMinute,
-              (minute: number) => minute.toString().padStart(2, '0')
-            )}
+              {/* Minute Dropdown */}
+              {renderDropdown(
+                "Minute",
+                selectedMinute,
+                showMinuteDropdown,
+                () => {
+                  setShowMinuteDropdown(!showMinuteDropdown);
+                  setShowHourDropdown(false);
+                  setShowPeriodDropdown(false);
+                },
+                minutes,
+                (minute) => setSelectedMinute(minute as number),
+                (minute) => minute.toString().padStart(2, '0')
+              )}
 
-            {/* AM/PM Column */}
-            {renderScrollableColumn(
-              "Period",
-              periods,
-              selectedPeriod,
-              setSelectedPeriod,
-              (period: string) => period
-            )}
+              {/* Period Dropdown */}
+              {renderDropdown(
+                "AM/PM",
+                selectedPeriod,
+                showPeriodDropdown,
+                () => {
+                  setShowPeriodDropdown(!showPeriodDropdown);
+                  setShowHourDropdown(false);
+                  setShowMinuteDropdown(false);
+                },
+                periods,
+                (period) => setSelectedPeriod(period as string)
+              )}
+            </View>
           </View>
 
           {/* Action Buttons */}

@@ -22,7 +22,7 @@ import { useJournalStore } from '../stores/useJournalStore';
 import { useUserStore } from '../stores/useUserStore';
 import { BlurView } from 'expo-blur';
 import { deleteLocalEntry } from '../services/journalDatabase';
-import { CalendarDateTimePicker } from '../components/CalendarDateTimePicker';
+import { DateTimePicker } from '../components/DateTimePicker';
 
 const EMOJI_LIST = [
   '😊', '😢', '😤', '😌', '💼', '❤️', '💪', '🍽️', '✈️', '📝',
@@ -908,7 +908,7 @@ export default function JournalEntryView() {
 
         {/* Date Time Picker Modal */}
         {entry && (
-          <CalendarDateTimePicker
+          <DateTimePicker
             visible={showEditDateTime}
             onClose={() => setShowEditDateTime(false)}
             onConfirm={handleDateTimeUpdate}

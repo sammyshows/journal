@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSettingsStore } from '../stores/useAppSettingsStore';
 import { useUserStore } from '../stores/useUserStore';
-import { ModernTimePicker } from './ModernTimePicker';
+import { TimePicker } from './TimePicker';
 import notificationService, { UserPreferences } from '../services/notificationService';
 
 interface NotificationPreferencesProps {
@@ -122,8 +122,7 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
   const testNotification = async () => {
     try {
       await notificationService.scheduleTestNotification();
-      // Don't show modal - just trigger the notification
-      console.log('Test notification scheduled');
+      console.log('Test notification scheduled (3 seconds)');
     } catch (error) {
       console.error('Error sending test notification:', error);
       Alert.alert('Error', 'Failed to send test notification');
@@ -278,7 +277,7 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
                     fontWeight: '500',
                     marginLeft: 8
                   }}>
-                    Send Test Notification
+                    Test Notification (3s)
                   </Text>
                 </TouchableOpacity>
 
@@ -341,7 +340,7 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
         </View>
       </View>
 
-      <ModernTimePicker
+      <TimePicker
         visible={showTimePicker}
         onClose={() => setShowTimePicker(false)}
         onSelect={handleTimeSelect}

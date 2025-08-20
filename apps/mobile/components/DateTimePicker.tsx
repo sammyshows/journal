@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, ScrollView }
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSettingsStore } from '../stores/useAppSettingsStore';
 
-interface CalendarDateTimePickerProps {
+interface DateTimePickerProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (datetime: Date) => void;
@@ -13,13 +13,13 @@ interface CalendarDateTimePickerProps {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export function CalendarDateTimePicker({ 
+export function DateTimePicker({ 
   visible, 
   onClose, 
   onConfirm, 
   currentDateTime, 
   title = "Edit Date & Time" 
-}: CalendarDateTimePickerProps) {
+}: DateTimePickerProps) {
   const { theme } = useAppSettingsStore();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;

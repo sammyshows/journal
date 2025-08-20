@@ -26,7 +26,7 @@ class NotificationService {
     
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true, // Keep for now to avoid breaking changes
+        shouldShowAlert: true,
         shouldShowBanner: true,
         shouldShowList: true,
         shouldPlaySound: true,
@@ -66,13 +66,8 @@ class NotificationService {
       
       if (!permissionResult.granted) return;
 
-      if (!this.hasInitialized) {
-        const preferences = await this.getUserPreferences(userId);
-        if (preferences?.daily_reminders) {
-          await this.scheduleDailyReminder(preferences.daily_reminder_time);
-        }
-        this.hasInitialized = true;
-      }
+      this.hasInitialized = true;
+      console.log('Notifications initialized');
     } catch (error) {
       console.error('Error initializing notifications:', error);
     }
@@ -80,21 +75,17 @@ class NotificationService {
 
   async scheduleDailyReminder(reminderTime: string): Promise<void> {
     try {
-      // FOR TESTING: Schedule notification 3 seconds from now
-      // TODO: Change this to use actual daily reminder time
-      const testNotificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Time to reflect! 📝",
-          body: "How was your day? Take a moment to write in your journal.",
-          data: { type: 'daily_reminder', scheduledTime: reminderTime },
-        },
-        trigger: { seconds: 3 }, // FOR TESTING ONLY
-      });
+      console.log(`Scheduling daily reminder for ${reminderTime}`);
+      
+      // Parse the time (format: "HH:MM" or "HH:MM:SS")
+      const timeParts = reminderTime.split(':');
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+      
+      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        throw new Error(`Invalid time format: ${reminderTime}`);
+      }
 
-      this.dailyNotificationId = testNotificationId;
-
-      /* TODO: Replace the test trigger above with actual daily scheduling
-      const [hours, minutes] = reminderTime.split(':').map(Number);
       const now = new Date();
       const scheduledTime = new Date();
       scheduledTime.setHours(hours, minutes, 0, 0);
@@ -104,22 +95,32 @@ class NotificationService {
         scheduledTime.setDate(scheduledTime.getDate() + 1);
       }
 
+      console.log(`Scheduling notification for: ${scheduledTime.toLocaleString()}`);
+
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: "Time to reflect! 📝",
           body: "How was your day? Take a moment to write in your journal.",
-          data: { type: 'daily_reminder' },
+          data: { 
+            type: 'daily_reminder', 
+            scheduledTime: reminderTime,
+            originalScheduledDate: scheduledTime.toISOString()
+          },
         },
         trigger: {
-          date: scheduledTime,
+          hour: hours,
+          minute: minutes,
           repeats: true,
         },
       });
 
       this.dailyNotificationId = notificationId;
-      console.log(`Daily reminder scheduled for ${reminderTime} daily`);
-      */
-
+      console.log(`Daily reminder scheduled with ID: ${notificationId} for ${reminderTime} daily`);
+      
+      // Verify the notification was scheduled
+      const scheduledNotifications = await this.getAllScheduledNotifications();
+      console.log(`Total scheduled notifications: ${scheduledNotifications.length}`);
+      
     } catch (error) {
       console.error('Error scheduling daily reminder:', error);
       throw error;
@@ -179,10 +180,16 @@ class NotificationService {
     daily_reminder_time: string;
   }): Promise<void> {
     try {
-      await this.rescheduleDailyReminder(
-        preferences.daily_reminders,
-        preferences.daily_reminder_time
-      );
+      // Always cancel existing notifications first
+      await this.cancelDailyReminder();
+      
+      // Only schedule if reminders are enabled
+      if (preferences.daily_reminders) {
+        console.log('Scheduling daily reminder because it\'s enabled');
+        await this.scheduleDailyReminder(preferences.daily_reminder_time);
+      } else {
+        console.log('Not scheduling daily reminder because it\'s disabled');
+      }
     } catch (error) {
       console.error('Error updating local notifications:', error);
     }
@@ -199,14 +206,18 @@ class NotificationService {
   }
 
   async scheduleTestNotification(): Promise<void> {
+    console.log('Scheduling test notification for 3 seconds from now');
+    
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Test Notification 📝",
         body: "This is a test notification to verify local notifications work!",
         data: { type: 'test' },
       },
-      trigger: { seconds: 2 },
+      trigger: { seconds: 3 },
     });
+    
+    console.log('Test notification scheduled successfully');
   }
 
   async getAllScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
