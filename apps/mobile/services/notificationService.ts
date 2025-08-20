@@ -86,16 +86,7 @@ class NotificationService {
         throw new Error(`Invalid time format: ${reminderTime}`);
       }
 
-      const now = new Date();
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
-
-      // If the time has already passed today, schedule for tomorrow
-      if (scheduledTime <= now) {
-        scheduledTime.setDate(scheduledTime.getDate() + 1);
-      }
-
-      console.log(`Scheduling notification for: ${scheduledTime.toLocaleString()}`);
+      console.log(`Scheduling daily notification for ${hours}:${minutes.toString().padStart(2, '0')}`);
 
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
@@ -103,14 +94,13 @@ class NotificationService {
           body: "How was your day? Take a moment to write in your journal.",
           data: { 
             type: 'daily_reminder', 
-            scheduledTime: reminderTime,
-            originalScheduledDate: scheduledTime.toISOString()
+            scheduledTime: reminderTime
           },
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: scheduledTime,
-          repeats: true,
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: hours,
+          minute: minutes,
         },
       });
 
