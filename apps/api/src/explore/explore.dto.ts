@@ -19,6 +19,11 @@ export class ExploreRequestDto {
   @ValidateNested({ each: true })
   @Type(() => ExploreMessage)
   chat: ExploreMessage[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
 
 export class JournalEntryCard {

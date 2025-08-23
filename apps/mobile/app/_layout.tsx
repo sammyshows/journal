@@ -20,6 +20,7 @@ export default function Layout() {
   }, [loading, currentUser]);
 
   useEffect(() => {
+    syncUnsyncedEntries();
     const interval = setInterval(() => {
       syncUnsyncedEntries();
     }, 30000);

@@ -177,7 +177,7 @@ export default function AssistantScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
-      {messages.length && (
+      {messages.length > 0 && (
         <View className="flex-row justify-between items-center px-4 py-4 border-b" style={{ borderColor: theme.border }}>
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/journal')}

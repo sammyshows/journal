@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalExceptionFilter } from './filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,21 +14,8 @@ async function bootstrap() {
     disableErrorMessages: false,
   }));
 
-  // Catch validation errors globally
-  app.useGlobalFilters({
-    catch(exception, host) {
-      const ctx = host.switchToHttp();
-      const req = ctx.getRequest();
-      const res = ctx.getResponse();
-
-      if (exception?.getStatus?.() === 400) {
-        const response = exception.getResponse?.();
-        Logger.warn(`[VALIDATION] ${req.method} ${req.url} → ${JSON.stringify(response)}`);
-      }
-
-      throw exception; // Let Nest handle the response
-    },
-  });
+  // Use global exception filter to handle all errors gracefully
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.enableCors({
     origin: '*'

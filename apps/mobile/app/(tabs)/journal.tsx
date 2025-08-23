@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,7 +22,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
   const grouped: { [key: string]: GroupedEntry } = {};
   
   entries.forEach(entry => {
-    const date = new Date(entry.created_at);
+    const date = new Date(entry.timestamp);
     const dateKey = date.toDateString();
     
     if (!grouped[dateKey]) {
@@ -54,7 +54,7 @@ function groupEntriesByDate(entries: JournalEntry[]): GroupedEntry[] {
   });
   
   return Object.values(grouped).sort((a, b) => 
-    new Date(b.entries[0].created_at).getTime() - new Date(a.entries[0].created_at).getTime()
+    new Date(b.entries[0].timestamp).getTime() - new Date(a.entries[0].timestamp).getTime()
   );
 }
 
@@ -66,6 +66,8 @@ export default function JournalScreen() {
   const [pressedEntry, setPressedEntry] = useState<string | null>(null);
 
   const insets = useSafeAreaInsets()
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   
   const groupedEntries = groupEntriesByDate(entries);
 
@@ -74,6 +76,51 @@ export default function JournalScreen() {
       fetchEntries(currentUser.id);
     }
   }, [currentUser, hasLoaded, fetchEntries]);
+
+  useEffect(() => {
+    // Create a smooth speed-varying spinning animation
+    const createSpinAnimation = () => {
+      return Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.bezier(0.4, 0.0, 0.6, 1.0), // Smooth acceleration/deceleration
+          useNativeDriver: true,
+        })
+      );
+    };
+
+    // Create a light pulsing animation for the text
+    const createPulseAnimation = () => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.6,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const spinAnimation = createSpinAnimation();
+    const pulseAnimation = createPulseAnimation();
+    
+    spinAnimation.start();
+    pulseAnimation.start();
+
+    return () => {
+      spinAnimation.stop();
+      pulseAnimation.stop();
+    };
+  }, [spinAnim, pulseAnim]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -176,6 +223,10 @@ export default function JournalScreen() {
                     onPressOut={() => setPressedEntry(null)}
                     onPress={() => {
                       setPressedEntry(null);
+                      // Don't navigate to unsynced entries
+                      if (entry.unsynced) {
+                        return;
+                      }
                       router.push({
                         pathname: '/journal-entry',
                         params: { id: entry.journal_entry_id }
@@ -190,26 +241,77 @@ export default function JournalScreen() {
                       shadowOffset: { width: 0, height: 6 },
                       shadowOpacity: 0.12,
                       shadowRadius: 50,
-                      
                       elevation: 4,
+                      // Add visual indication for unsynced entries
+                      borderWidth: entry.unsynced ? 1 : 0,
+                      borderColor: entry.unsynced ? theme.primary : 'transparent',
+                      opacity: entry.unsynced ? 0.7 : 1,
                     }}
                   >
                   {/* Entry Content */}
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji}</Text>
+                    <Text style={{ fontSize: 20, marginRight: 12 }}>{entry.emoji || '📝'}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>
-                        {entry.title}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: theme.secondaryText }}>
-                        {formatTime(entry.created_at)}
-                      </Text>
+                      {entry.unsynced ? (
+                        // Unsynced entry display
+                        <View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <Animated.Text style={{ 
+                              fontSize: 14, 
+                              fontWeight: '600', 
+                              color: theme.text, 
+                              marginRight: 8,
+                              opacity: pulseAnim
+                            }}>
+                              Summarising...
+                            </Animated.Text>
+                            <Animated.View
+                              style={{
+                                transform: [{
+                                  rotate: spinAnim.interpolate({
+                                    inputRange: [0, 0.1, 0.5, 0.9, 1],
+                                    outputRange: ['0deg', '90deg', '540deg', '810deg', '900deg'],
+                                  }),
+                                }],
+                              }}
+                            >
+                              <Ionicons name="sync" size={12} color={theme.primary} />
+                            </Animated.View>
+                          </View>
+                          <Text 
+                            style={{ 
+                              fontSize: 12, 
+                              color: theme.secondaryText, 
+                              lineHeight: 16,
+                              marginBottom: 4
+                            }}
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
+                          >
+                            {entry.content}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: theme.secondaryText }}>
+                            {formatTime(entry.timestamp)}
+                          </Text>
+                        </View>
+                      ) : (
+                        // Regular synced entry display
+                        <View>
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>
+                            {entry.title}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: theme.secondaryText }}>
+                            {formatTime(entry.timestamp)}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
 
                   {/* Tags */}
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {entry.tags?.map((tag, tagIndex) => (
+                    {entry.tags?.map((tag: string, tagIndex: number) => (
+                      // Show regular tags for synced entries
                       <View
                         key={tagIndex}
                         style={{
@@ -225,7 +327,7 @@ export default function JournalScreen() {
                           {tag}
                         </Text>
                       </View>
-                    ))}
+                      ))}
                   </View>
                   </TouchableOpacity>
                 </Animated.View>

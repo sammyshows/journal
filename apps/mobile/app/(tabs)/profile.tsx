@@ -9,6 +9,8 @@ import * as apiService from '../../services/api';
 import { useAppSettingsStore } from '../../stores/useAppSettingsStore';
 import { useUserStore, User } from '../../stores/useUserStore';
 import { useJournalStore } from '../../stores/useJournalStore';
+import notificationService from '../../services/notificationService';
+import { resetLocalDatabase } from '../../services/journalDatabase';
 
 export default function ProfileScreen() {
   const { theme, themeMode, setThemeMode } = useAppSettingsStore();
@@ -93,6 +95,62 @@ export default function ProfileScreen() {
         }
       ]
     );
+  };
+
+  const viewScheduledNotifications = async () => {
+    try {
+      const notifications = await notificationService.getAllScheduledNotifications();
+      
+      if (notifications.length === 0) {
+        Alert.alert('Scheduled Notifications', 'No notifications are currently scheduled.');
+        return;
+      }
+
+      const notificationList = notifications.map((notif, index) => 
+        `${index + 1}. ${notif.content.title || 'Journal Reminder'}\n   Trigger: ${JSON.stringify(notif.trigger, null, 2)}`
+      ).join('\n\n');
+
+      Alert.alert(
+        'Scheduled Notifications', 
+        `Found ${notifications.length} scheduled notification(s):\n\n${notificationList}`,
+        [{ text: 'OK' }],
+        { userInterfaceStyle: theme.name === 'dark' ? 'dark' : 'light' }
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get scheduled notifications: ' + error);
+    }
+  };
+
+  const handleResetLocalDatabase = () => {
+    Alert.alert(
+      'Reset Local Database',
+      'This will delete all local journal entries. This cannot be undone. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetLocalDatabase();
+              Alert.alert('Success', 'Local database has been reset.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset database: ' + error);
+            }
+          }
+        }
+      ],
+      { userInterfaceStyle: theme.name === 'dark' ? 'dark' : 'light' }
+    );
+  };
+
+  const testNotification = async () => {
+    try {
+      await notificationService.scheduleTestNotification();
+      Alert.alert('Test Notification', 'Test notification scheduled for 3 seconds from now.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send test notification: ' + error);
+    }
   };
 
   if (loading) {
@@ -325,6 +383,48 @@ export default function ProfileScreen() {
                   <Text style={{ color: theme.primary, fontSize: 16, marginLeft: 8 }}>Delete Account</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={theme.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Debug Section */}
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 24 }}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: 'semibold' }}>Debug</Text>
+            </View>
+            
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, gap: 16 }}>
+              <TouchableOpacity
+                onPress={viewScheduledNotifications}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="notifications" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>View Scheduled Notifications</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={testNotification}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="send" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Test Notification</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleResetLocalDatabase}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="refresh" size={20} color="#ef4444" />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Reset Local Database</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
             </View>
           </View>

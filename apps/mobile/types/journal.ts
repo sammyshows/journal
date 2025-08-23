@@ -1,8 +1,10 @@
 export interface JournalEntry {
   journal_entry_id?: string;
+  user_id?: string;
   content: string;
   timestamp: string;
   created_at: string;
+  updated_at?: string;
   metadata?: {
     message_count?: number;
     created_via?: string;
@@ -13,6 +15,7 @@ export interface JournalEntry {
   title?: string;
   user_summary?: string;
   ai_summary?: string;
+  unsynced?: boolean; // Flag to identify unsynced local entries
 }
 
 export interface JournalMessage {

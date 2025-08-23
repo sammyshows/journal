@@ -118,9 +118,17 @@ export default function NewJournalEntry() {
 
     const journal_entry_id = uuidv4();
 
-    saveToLocalDatabase(journal_entry_id, finalContent);
+    await saveToLocalDatabase(journal_entry_id, finalContent);
 
-    saveOnline(journal_entry_id, finalContent);
+    try {
+      throw new Error('Testing a sync error on entry creation');
+      await saveOnline(journal_entry_id, finalContent)
+        // .catch((error) => console.error('Error saving new entry:', error));
+    } catch (err) {
+      console.error(err)
+    }
+
+    await fetchEntries(currentUser.id);
 
     setIsSaving(false);
   };
@@ -135,7 +143,7 @@ export default function NewJournalEntry() {
 
       Alert.alert(
         'Entry Saved!', 
-        'Your journal entry has been saved and processed.',
+        'Your journal entry has been saved and is being summarised.',
         [
           {
             text: 'OK',
@@ -152,7 +160,6 @@ export default function NewJournalEntry() {
   const saveOnline = async (journal_entry_id: string, content: string) => {
     try {
       await apiService.createJournalEntry(journal_entry_id, content, currentUser.id);
-      await fetchEntries(currentUser.id);
     } catch (error) {
       console.error('Error saving entry:', error);
     }

@@ -48,11 +48,10 @@ export default function JournalEntryView() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditDateTime, setShowEditDateTime] = useState(false);
   
-  const slideAnim = useRef(new Animated.Value(1)).current;
   const titleInputRef = useRef<TextInput>(null);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const contentSlideAnim = useRef(new Animated.Value(50)).current;
+  const contentSlideAnim = useRef(new Animated.Value(20)).current;
   const modalScaleAnim = useRef(new Animated.Value(0.8)).current;
   const modalOpacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -62,30 +61,22 @@ export default function JournalEntryView() {
       loadEntry(entryId);
     }
     
-    // Enhanced slide in animation with staggered content
-    slideAnim.setValue(1);
+    // Simple fade in animation
     fadeAnim.setValue(0);
-    contentSlideAnim.setValue(50);
+    contentSlideAnim.setValue(20);
     
     Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
-        delay: 200,
+        duration: 300,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(contentSlideAnim, {
         toValue: 0,
-        duration: 500,
-        delay: 300,
-        easing: Easing.out(Easing.back(1.2)),
+        duration: 400,
+        delay: 100,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
@@ -113,22 +104,7 @@ export default function JournalEntryView() {
   };
 
   const handleBack = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 300,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      router.back();
-    });
+    router.back();
   };
 
   const handleEditToggle = () => {
@@ -343,18 +319,7 @@ export default function JournalEntryView() {
   }
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        transform: [{
-          translateX: slideAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, Dimensions.get('window').width],
-          }),
-        }],
-      }}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
         {/* Header */}
         <Animated.View style={{
           flexDirection: 'row',
@@ -917,6 +882,5 @@ export default function JournalEntryView() {
           />
         )}
       </SafeAreaView>
-    </Animated.View>
   );
 }

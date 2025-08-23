@@ -17,7 +17,7 @@ export class ExploreController {
   @Post()
   async explore(@Body() exploreRequest: ExploreRequestDto): Promise<ExploreResponseDto> {
     try {
-      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const userId = exploreRequest.userId || '123e4567-e89b-12d3-a456-426614174000';
       
       return await this.exploreService.processMessage(exploreRequest.chat, userId);
     } catch (error) {

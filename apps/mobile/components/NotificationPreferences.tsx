@@ -119,15 +119,6 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
     await updatePreferences({ daily_reminder_time: time });
   };
 
-  const testNotification = async () => {
-    try {
-      await notificationService.scheduleTestNotification();
-      console.log('Test notification scheduled (3 seconds)');
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      Alert.alert('Error', 'Failed to send test notification');
-    }
-  };
 
   const showScheduledNotifications = async () => {
     try {
@@ -255,56 +246,6 @@ export function NotificationPreferences({ userId }: NotificationPreferencesProps
                 </View>
               </TouchableOpacity>
 
-              {/* Action Buttons */}
-              <View style={{ marginTop: 16, gap: 8 }}>
-                <TouchableOpacity
-                  onPress={testNotification}
-                  disabled={saving}
-                  style={{
-                    backgroundColor: `${theme.primary}10`,
-                    borderRadius: 12,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Ionicons name="send" size={16} color={theme.primary} />
-                  <Text style={{ 
-                    color: theme.primary, 
-                    fontSize: 14, 
-                    fontWeight: '500',
-                    marginLeft: 8
-                  }}>
-                    Test Notification (3s)
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={showScheduledNotifications}
-                  disabled={saving}
-                  style={{
-                    backgroundColor: `${theme.secondaryText}10`,
-                    borderRadius: 12,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Ionicons name="list" size={16} color={theme.secondaryText} />
-                  <Text style={{ 
-                    color: theme.secondaryText, 
-                    fontSize: 14, 
-                    fontWeight: '500',
-                    marginLeft: 8
-                  }}>
-                    View Scheduled
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </View>
           )}
           

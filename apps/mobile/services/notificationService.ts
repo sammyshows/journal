@@ -77,6 +77,10 @@ class NotificationService {
     try {
       console.log(`Scheduling daily reminder for ${reminderTime}`);
       
+      // Cancel all existing scheduled notifications first
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      console.log('Cancelled all existing scheduled notifications');
+      
       // Parse the time (format: "HH:MM" or "HH:MM:SS")
       const timeParts = reminderTime.split(':');
       const hours = parseInt(timeParts[0], 10);
