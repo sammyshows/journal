@@ -7,7 +7,7 @@ import { VoiceMicButton } from '../../components/VoiceMicButton';
 import { FloatingToggle } from '../../components/FloatingToggle';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import * as apiService from '../../services/api';
-import { addEntry } from '../../services/journalDatabase';
+import { addEntry as addEntryToDatabase } from '../../services/journalDatabase';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
@@ -19,7 +19,7 @@ type Mode = 'text' | 'voice' | 'mixed';
 export default function NewJournalEntry() {
   const { theme } = useAppSettingsStore()
   const { currentUser } = useUserStore();
-  const { fetchEntries } = useJournalStore();
+  const { fetchEntries, addEntry } = useJournalStore();
   const [mode, setMode] = useState<Mode>('text');
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -114,31 +114,42 @@ export default function NewJournalEntry() {
       return;
     }
 
-    setIsSaving(true);
-
-    const journal_entry_id = uuidv4();
-
-    await saveToLocalDatabase(journal_entry_id, finalContent);
-
+    
     try {
-      throw new Error('Testing a sync error on entry creation');
+      setIsSaving(true);
+      const journal_entry_id = uuidv4();
+
+      await saveToLocalDatabase(journal_entry_id, finalContent);
+
       await saveOnline(journal_entry_id, finalContent)
-        // .catch((error) => console.error('Error saving new entry:', error));
-    } catch (err) {
-      console.error(err)
+        .catch((error) => console.error('Error saving new entry:', error));
+
+      await fetchEntries(currentUser.id);
+    } catch (error) {
+      console.error('Error saving entry:', error);
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchEntries(currentUser.id);
-
-    setIsSaving(false);
   };
 
   const saveToLocalDatabase = async (journal_entry_id: string, content: string) => {
     try {
-      await addEntry({
+      await addEntryToDatabase({
         journal_entry_id,
         userId: currentUser.id,
         content
+      });
+
+      // Add the entry to the store immediately so it shows in the UI
+      const timestamp = new Date().toISOString();
+      addEntry({
+        journal_entry_id,
+        user_id: currentUser.id,
+        content,
+        timestamp,
+        created_at: timestamp,
+        updated_at: timestamp,
+        unsynced: true
       });
 
       Alert.alert(

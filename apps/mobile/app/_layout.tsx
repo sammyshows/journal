@@ -4,11 +4,14 @@ import { useUserStore } from "../stores/useUserStore";
 import { View, ActivityIndicator } from "react-native";
 import { syncUnsyncedEntries } from "@/services/journalDatabase";
 import notificationService from "../services/notificationService";
+import { errorLogger } from "../services/errorLogger";
 
 export default function Layout() {
   const { loadUserFromStorage, loading, currentUser } = useUserStore();
 
   useEffect(() => {
+    // Initialize error logging
+    errorLogger.setupGlobalErrorCapture();
     loadUserFromStorage();
   }, []);
 
@@ -20,13 +23,15 @@ export default function Layout() {
   }, [loading, currentUser]);
 
   useEffect(() => {
-    syncUnsyncedEntries();
-    const interval = setInterval(() => {
+    if (!loading && currentUser) {
       syncUnsyncedEntries();
-    }, 30000);
-  
-    return () => clearInterval(interval);
-  }, []);
+      const interval = setInterval(() => {
+        syncUnsyncedEntries();
+      }, 30000);
+    
+      return () => clearInterval(interval);
+    }
+  }, [loading, currentUser]);
 
   if (loading) {
     return (

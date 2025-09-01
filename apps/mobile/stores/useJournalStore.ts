@@ -11,6 +11,7 @@ interface JournalStore {
   syncInProgress: boolean;
   setEntries: (entries: JournalEntry[]) => void;
   fetchEntries: (userId?: string) => Promise<void>;
+  addEntry: (entry: JournalEntry) => void;
   updateEntryInStore: (updatedEntry: JournalEntry) => void;
   getEntry: (entryId: string) => JournalEntry | undefined;
   setSyncInProgress: (inProgress: boolean) => void;
@@ -108,6 +109,12 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
     return entries.find(entry => entry.journal_entry_id === entryId);
   },
   
+  addEntry: (entry: JournalEntry) => {
+    const { entries } = get();
+    const newEntries = [entry, ...entries];
+    set({ entries: newEntries });
+  },
+
   updateEntryInStore: (updatedEntry: JournalEntry) => {
     const { entries } = get();
 

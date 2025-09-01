@@ -3,6 +3,7 @@ import * as SQLite from 'expo-sqlite';
 import { createJournalEntry, getJournalEntries } from './api/journal';
 import { useUserStore } from '../stores/useUserStore';
 import { useJournalStore } from '../stores/useJournalStore';
+import { errorLogger } from './errorLogger';
 
 // Database configuration
 const DB_NAME = 'journal.db';
@@ -211,9 +212,9 @@ export const resetLocalDatabase = dbFunctionWrapper(async (): Promise<void> => {
     `);
     
     // Recreate indexes
-    await db.execAsync(`
-      CREATE INDEX IF NOT EXISTS idx_timestamp ON entries(timestamp);
-    `);
+    // await db.execAsync(`
+    //   CREATE INDEX IF NOT EXISTS idx_timestamp ON entries(timestamp);
+    // `);
 
     console.log('Local database has been reset successfully');
   } catch (error) {
@@ -223,23 +224,25 @@ export const resetLocalDatabase = dbFunctionWrapper(async (): Promise<void> => {
 });
 
 export async function syncUnsyncedEntries() {
+  const { syncInProgress, setSyncInProgress, fetchEntries } = useJournalStore.getState();
+  
   try {
-    throw new Error('Testing a sync error on entry sync');
     // Check if sync is already in progress
-    const { syncInProgress, setSyncInProgress, fetchEntries } = useJournalStore.getState();
     if (syncInProgress) {
-      console.log('Sync already in progress, skipping...');
+      errorLogger.info('Sync already in progress, skipping...', 'syncUnsyncedEntries');
       return;
     }
 
     setSyncInProgress(true);
+    errorLogger.info('Starting sync process', 'syncUnsyncedEntries');
 
     const userId = useUserStore.getState().currentUser?.id;
     if (!userId) {
-      console.warn('No user ID available for sync');
-      setSyncInProgress(false);
+      errorLogger.warn('No user ID available for sync', 'syncUnsyncedEntries');
       return;
     }
+
+    errorLogger.info(`Syncing for user: ${userId}`, 'syncUnsyncedEntries');
 
     const [localEntries, remoteEntries] = await Promise.all([
       getLocalEntries(userId),
@@ -249,13 +252,13 @@ export async function syncUnsyncedEntries() {
     const remoteIds = new Set(remoteEntries.map(e => e.journal_entry_id));
     const unsynced = localEntries.filter(local => !remoteIds.has(local.journal_entry_id));
 
-    console.log('[syncUnsyncedEntries] unsynced entry count', unsynced.length);
+    errorLogger.info(`Found ${unsynced.length} unsynced entries`, 'syncUnsyncedEntries');
 
     let successfulSyncs = 0;
 
     for (const entry of unsynced) {
       try {
-        console.log(`Syncing entry: ${entry.journal_entry_id}`);
+        errorLogger.info(`Syncing entry: ${entry.journal_entry_id}`, 'syncUnsyncedEntries');
 
         await createJournalEntry(
           entry.journal_entry_id,
@@ -266,11 +269,11 @@ export async function syncUnsyncedEntries() {
 
         // Delete the successfully synced entry from local database
         await deleteLocalEntry(entry.journal_entry_id);
-        console.log(`Successfully synced and removed from local DB: ${entry.journal_entry_id}`);
+        errorLogger.info(`Successfully synced and removed from local DB: ${entry.journal_entry_id}`, 'syncUnsyncedEntries');
         successfulSyncs++;
 
       } catch (syncError) {
-        console.warn(`Failed to sync entry ${entry.journal_entry_id}:`, syncError);
+        errorLogger.error(`Failed to sync entry ${entry.journal_entry_id}`, 'syncUnsyncedEntries', syncError as Error);
         // Continue with other entries even if one fails
       }
     }
@@ -285,7 +288,8 @@ export async function syncUnsyncedEntries() {
 
     setSyncInProgress(false);
   } catch (err) {
-    console.error('Error syncing unsynced entries:', err);
-    useJournalStore.getState().setSyncInProgress(false);
+    errorLogger.error('Error syncing unsynced entries', 'syncUnsyncedEntries', err as Error);
+  } finally {
+    setSyncInProgress(false);
   }
 }

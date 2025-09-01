@@ -11,6 +11,7 @@ import { useUserStore, User } from '../../stores/useUserStore';
 import { useJournalStore } from '../../stores/useJournalStore';
 import notificationService from '../../services/notificationService';
 import { resetLocalDatabase } from '../../services/journalDatabase';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const { theme, themeMode, setThemeMode } = useAppSettingsStore();
@@ -412,6 +413,17 @@ export default function ProfileScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="send" size={20} color={theme.secondaryText} />
                   <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Test Notification</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push('/debug-logs')}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="bug" size={20} color={theme.secondaryText} />
+                  <Text style={{ color: theme.text, fontSize: 16, marginLeft: 8 }}>Error Logs</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={theme.secondaryText} />
               </TouchableOpacity>
