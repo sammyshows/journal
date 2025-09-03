@@ -84,10 +84,6 @@ export async function initDB(): Promise<void> {
  */
 export const addEntry = dbFunctionWrapper(async (data: NewEntryData): Promise<string> => {
   try {
-    if (!db) {
-      await initDB();
-    }
-
     const timestamp = new Date().toISOString();
 
     await db!.runAsync(
@@ -108,10 +104,6 @@ export const addEntry = dbFunctionWrapper(async (data: NewEntryData): Promise<st
  */
 export const getLocalEntries = dbFunctionWrapper(async (userId: string): Promise<LocalJournalEntry[]> => {
   try {
-    if (!db) {
-      await initDB();
-    }
-
     const result = await db!.getAllAsync(
       'SELECT * FROM entries WHERE user_id = ? ORDER BY timestamp DESC',
       [userId]
@@ -130,10 +122,6 @@ export const getLocalEntries = dbFunctionWrapper(async (userId: string): Promise
  */
 export const deleteLocalEntry = dbFunctionWrapper(async (journal_entry_id: string): Promise<void> => {
   try {
-    if (!db) {
-      await initDB();
-    }
-
     const result = await db!.runAsync('DELETE FROM entries WHERE journal_entry_id = ?', [journal_entry_id]);
     
     if (result.changes === 0) {
@@ -153,10 +141,6 @@ export const deleteLocalEntry = dbFunctionWrapper(async (journal_entry_id: strin
  */
 export const deleteLocalEntriesBatch = dbFunctionWrapper(async (journal_entry_ids: string[]): Promise<void> => {
   try {
-    if (!db) {
-      await initDB();
-    }
-
     if (journal_entry_ids.length === 0) {
       return;
     }
@@ -194,10 +178,6 @@ export const closeDB = dbFunctionWrapper(async (): Promise<void> => {
  */
 export const resetLocalDatabase = dbFunctionWrapper(async (): Promise<void> => {
   try {
-    if (!db) {
-      await initDB();
-    }
-
     // Drop the entries table
     await db!.execAsync('DROP TABLE IF EXISTS entries');
     

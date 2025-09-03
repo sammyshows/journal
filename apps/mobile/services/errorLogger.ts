@@ -32,14 +32,8 @@ class ErrorLogger {
       this.logs = this.logs.slice(0, this.maxLogs);
     }
 
-    // Also log to console
-    if (level === 'error') {
-      console.error(`[ErrorLogger] ${context ? `[${context}] ` : ''}${message}`, stack || '');
-    } else if (level === 'warn') {
-      console.warn(`[ErrorLogger] ${context ? `[${context}] ` : ''}${message}`);
-    } else {
-      console.log(`[ErrorLogger] ${context ? `[${context}] ` : ''}${message}`);
-    }
+    // Don't also log to console to avoid recursion issues
+    // The logs will be visible in the debug logs page
   }
 
   error(message: string, context?: string, error?: Error): void {
@@ -64,26 +58,52 @@ class ErrorLogger {
 
   // Override global console methods to capture all logs
   setupGlobalErrorCapture(): void {
-    // Capture unhandled errors
+    // Store original methods to prevent recursion
     const originalConsoleError = console.error;
     const originalConsoleWarn = console.warn;
     const originalConsoleLog = console.log;
 
     console.error = (...args) => {
-      this.log(args.join(' '), 'error', 'console');
+      try {
+        // Use original console.log to avoid recursion in our log method
+        const message = args.join(' ');
+        this.logs.unshift({
+          id: this.generateId(),
+          timestamp: new Date().toISOString(),
+          message,
+          context: 'console',
+          level: 'error'
+        });
+        
+        // Keep only maxLogs
+        if (this.logs.length > this.maxLogs) {
+          this.logs = this.logs.slice(0, this.maxLogs);
+        }
+      } catch (e) {
+        // Ignore errors in error logger to prevent recursion
+      }
       originalConsoleError.apply(console, args);
     };
 
     console.warn = (...args) => {
-      this.log(args.join(' '), 'warn', 'console');
+      try {
+        const message = args.join(' ');
+        this.logs.unshift({
+          id: this.generateId(),
+          timestamp: new Date().toISOString(),
+          message,
+          context: 'console',
+          level: 'warn'
+        });
+        
+        if (this.logs.length > this.maxLogs) {
+          this.logs = this.logs.slice(0, this.maxLogs);
+        }
+      } catch (e) {
+        // Ignore errors in error logger to prevent recursion
+      }
       originalConsoleWarn.apply(console, args);
     };
-
-    // Optionally capture console.log too (might be noisy)
-    // console.log = (...args) => {
-    //   this.log(args.join(' '), 'info', 'console');
-    //   originalConsoleLog.apply(console, args);
-    // };
   }
 }
 
