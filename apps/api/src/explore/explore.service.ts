@@ -63,7 +63,7 @@ export class ExploreService {
 
     const journalEntries = await this.findSimilarJournalEntries(userId, embedding);
 
-    console.log('--------------------------------\n[handleFirstMessage] Journal entries:\n', journalEntries.map((entry: any) => entry.ai_summary), '\n--------------------------------');
+    console.log('--------------------------------\n[handleFirstMessage] Journal entries:\n', journalEntries.map((entry: any) => entry.content), '\n--------------------------------');
 
     // Step 4: Generate AI response based on the matches and original prompt
     const aiReply = await this.generateChatResponse([message], journalEntries);
@@ -139,7 +139,20 @@ export class ExploreService {
    * Generate AI response for chat with optional journal entry context
    */
   private async generateChatResponse(chat: ExploreMessage[], journalEntries?: any[]): Promise<string> {
-    const chatMessages = chat
+    // Build chat messages with relevant entries included
+    let chatMessages = '';
+    
+    // Add relevant entries as context at the start if they exist
+    if (journalEntries?.length > 0) {
+      chatMessages += 'Relevant entries:\n';
+      journalEntries.forEach((entry: any) => {
+        chatMessages += `${new Date(entry.created_at).toLocaleDateString()}: ${entry.content}\n\n`;
+      });
+      chatMessages += 'Current conversation:\n';
+    }
+    
+    // Add the actual chat messages
+    chatMessages += chat
       .map((msg) =>
         msg.role === "user"
           ? `User: ${msg.content}`
@@ -149,6 +162,7 @@ export class ExploreService {
 
     const systemPrompt = getExploreChatPrompt(chatMessages, journalEntries);
 
+    console.log('--------------------------------\n[generateChatResponse] System prompt:\n', systemPrompt, '\n--------------------------------');
     return await this.aiService.sendToAnthropicAPI(systemPrompt, 'sonnet');
   }
 

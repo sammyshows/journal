@@ -236,7 +236,11 @@ export default function AssistantScreen() {
                     elevation: 2
                   }}
                 >
-                  <Text className="text-sm leading-5" style={{ color: theme.surface }}>
+                  <Text 
+                    selectable={true}
+                    className="text-sm leading-5" 
+                    style={{ color: theme.surface }}
+                  >
                     {message.content}
                   </Text>
                   <Text className="text-xs mt-1 opacity-80" style={{ color: theme.surface }}>
@@ -259,7 +263,11 @@ export default function AssistantScreen() {
                     borderColor: theme.border
                   }}
                 >
-                  <Text className="text-sm leading-5" style={{ color: theme.text }}>
+                  <Text 
+                    selectable={true}
+                    className="text-sm leading-5" 
+                    style={{ color: theme.text }}
+                  >
                     {message.content}
                   </Text>
                   <Text className="text-xs mt-2" style={{ color: theme.secondaryText }}>

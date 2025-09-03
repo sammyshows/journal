@@ -625,11 +625,14 @@ export default function JournalEntryView() {
                 borderWidth: 1,
                 borderColor: theme.border,
               }}>
-                <Text style={{
-                  fontSize: 12,
-                  color: theme.text,
-                  lineHeight: 16,
-                }}>
+                <Text 
+                  selectable={true}
+                  style={{
+                    fontSize: 12,
+                    color: theme.text,
+                    lineHeight: 16,
+                  }}
+                >
                   {entry.ai_summary}
                 </Text>
               </View>
@@ -647,11 +650,14 @@ export default function JournalEntryView() {
               shadowRadius: 8,
               elevation: 3,
             }}>
-              <Text style={{
-                fontSize: 12,
-                color: theme.text,
-                lineHeight: 16,
-              }}>
+              <Text 
+                selectable={true}
+                style={{
+                  fontSize: 12,
+                  color: theme.text,
+                  lineHeight: 16,
+                }}
+              >
                 {entry.content}
               </Text>
             </View>
