@@ -8,6 +8,7 @@ import { FloatingToggle } from '../../components/FloatingToggle';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import * as apiService from '../../services/api';
 import { addEntry as addEntryToDatabase } from '../../services/journalDatabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppSettingsStore } from '@/stores/useAppSettingsStore';
@@ -15,6 +16,8 @@ import { useJournalStore } from '@/stores/useJournalStore';
 import { useUserStore } from '../../stores/useUserStore';
 
 type Mode = 'text' | 'voice' | 'mixed';
+
+const DRAFT_STORAGE_KEY = 'journal_draft_content';
 
 export default function NewJournalEntry() {
   const { theme } = useAppSettingsStore()
@@ -29,6 +32,23 @@ export default function NewJournalEntry() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height);
   const textInputRef = useRef<TextInput>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load persisted draft on component mount
+  useEffect(() => {
+    const loadPersistedDraft = async () => {
+      try {
+        const savedContent = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedContent) {
+          setContent(savedContent);
+        }
+      } catch (error) {
+        console.error('Failed to load persisted draft:', error);
+      }
+    };
+
+    loadPersistedDraft();
+  }, []);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
@@ -47,8 +67,52 @@ export default function NewJournalEntry() {
       keyboardDidShowListener?.remove();
       keyboardDidHideListener?.remove();
       dimensionChangeListener?.remove();
+      // Clear any pending save timeout on unmount
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Debounced save to AsyncStorage whenever content changes
+  useEffect(() => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Only save if there's content
+    if (content.trim()) {
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          await AsyncStorage.setItem(DRAFT_STORAGE_KEY, content);
+        } catch (error) {
+          console.error('Failed to save draft to AsyncStorage:', error);
+        }
+      }, 1000); // 1 second debounce
+    } else {
+      // If content is empty, clear the saved draft
+      AsyncStorage.removeItem(DRAFT_STORAGE_KEY).catch(error => {
+        console.error('Failed to remove draft from AsyncStorage:', error);
+      });
+    }
+
+    // Cleanup timeout on unmount or content change
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [content]);
+
+  // Helper function to clear persisted draft
+  const clearPersistedDraft = async () => {
+    try {
+      await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (error) {
+      console.error('Failed to clear persisted draft:', error);
+    }
+  };
 
   // useEffect(() => {
   //   // Auto-focus text input when in text mode
@@ -152,6 +216,10 @@ export default function NewJournalEntry() {
         unsynced: true
       });
 
+      // Clear the persisted draft since entry was saved successfully
+      await clearPersistedDraft();
+      setContent('');
+
       Alert.alert(
         'Entry Saved!', 
         'Your journal entry has been saved and is being summarised.',
@@ -183,7 +251,15 @@ export default function NewJournalEntry() {
         'You have unsaved changes. Are you sure you want to discard this entry?',
         [
           { text: 'Keep Writing', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => router.back() }
+          { 
+            text: 'Discard', 
+            style: 'destructive', 
+            onPress: async () => {
+              await clearPersistedDraft();
+              setContent('');
+              router.back();
+            }
+          }
         ]
       );
     } else {
