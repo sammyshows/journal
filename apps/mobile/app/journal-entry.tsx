@@ -653,9 +653,9 @@ export default function JournalEntryView() {
               <Text 
                 selectable={true}
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   color: theme.text,
-                  lineHeight: 16,
+                  lineHeight: 18,
                 }}
               >
                 {entry.content}

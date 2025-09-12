@@ -239,11 +239,11 @@ export default function AssistantScreen() {
                   <Text 
                     selectable={true}
                     className="text-sm leading-5" 
-                    style={{ color: theme.surface }}
+                    style={{ color: theme.text }}
                   >
                     {message.content}
                   </Text>
-                  <Text className="text-xs mt-1 opacity-80" style={{ color: theme.surface }}>
+                  <Text className="text-xs mt-1 opacity-80" style={{ color: theme.secondaryText }}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </View>

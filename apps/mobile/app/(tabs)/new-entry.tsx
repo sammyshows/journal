@@ -318,7 +318,7 @@ export default function NewJournalEntry() {
                 borderRadius: 16,
                 padding: 16,
                 minHeight: 200,
-                fontSize: 13,
+                fontSize: 15,
                 color: theme.text,
                 borderWidth: 1,
                 borderColor: theme.border,
